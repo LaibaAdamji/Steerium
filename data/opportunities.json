@@ -1,0 +1,189 @@
+[
+  {
+    "type": "masters_program",
+    "title": "MS in Computer Science",
+    "organization": "University of Toronto",
+    "description": "Research-oriented MSc in Computer Science with strengths in AI/ML and systems.",
+    "location": "Toronto, Canada",
+    "deadline": "2027-12-15",
+    "url": "https://web.cs.toronto.edu/graduate",
+    "requirements": ["Bachelor's in CS or related field", "Strong GPA", "2+ reference letters"],
+    "tags": ["AI", "Machine Learning", "Research"]
+  },
+  {
+    "type": "masters_program",
+    "title": "MS in Computer Science",
+    "organization": "Georgia Institute of Technology",
+    "description": "Flexible MSCS program with specializations including Machine Learning and Computing Systems.",
+    "location": "Atlanta, GA, USA",
+    "deadline": "2027-12-01",
+    "url": "https://www.cc.gatech.edu/degree-programs/computer-science-ms",
+    "requirements": ["Bachelor's degree", "GRE optional", "Statement of purpose"],
+    "tags": ["Systems", "Machine Learning"]
+  },
+  {
+    "type": "masters_program",
+    "title": "MSc Artificial Intelligence",
+    "organization": "University of Edinburgh",
+    "description": "One-year taught MSc focused on AI, with strong industry ties.",
+    "location": "Edinburgh, UK",
+    "deadline": "2027-06-30",
+    "url": "https://www.ed.ac.uk/studying/postgraduate/degrees/index.php?r=site/view&id=1075",
+    "requirements": ["UK 2:1 honours degree or equivalent", "Programming experience"],
+    "tags": ["AI", "NLP"]
+  },
+  {
+    "type": "masters_program",
+    "title": "MS in Computer Science",
+    "organization": "National University of Singapore",
+    "description": "Coursework-based MSc with tracks in AI, Software Engineering, and Systems.",
+    "location": "Singapore",
+    "deadline": "2027-03-15",
+    "url": "https://www.comp.nus.edu.sg/programmes/pg/msc/",
+    "requirements": ["Bachelor's degree in Computing", "English proficiency"],
+    "tags": ["AI", "Software Engineering"]
+  },
+  {
+    "type": "scholarship",
+    "title": "Fulbright Foreign Student Program",
+    "organization": "U.S. Department of State",
+    "description": "Fully funded scholarship for graduate study in the United States.",
+    "location": "USA (various universities)",
+    "deadline": "2027-05-15",
+    "url": "https://foreign.fulbrightonline.org/",
+    "requirements": ["Bachelor's degree", "Pakistani citizenship", "Strong academic record"],
+    "tags": ["Fully Funded", "USA"]
+  },
+  {
+    "type": "scholarship",
+    "title": "Commonwealth Scholarship",
+    "organization": "Commonwealth Scholarship Commission",
+    "description": "Fully funded Master's and PhD scholarships for students from Commonwealth countries.",
+    "location": "UK",
+    "deadline": "2027-01-10",
+    "url": "https://cscuk.fcdo.gov.uk/scholarships/",
+    "requirements": ["Bachelor's degree", "Commonwealth country citizenship"],
+    "tags": ["Fully Funded", "UK"]
+  },
+  {
+    "type": "scholarship",
+    "title": "DAAD Scholarship for Master's Studies",
+    "organization": "German Academic Exchange Service",
+    "description": "Funding for international students pursuing Master's degrees in Germany.",
+    "location": "Germany",
+    "deadline": "2027-10-15",
+    "url": "https://www.daad.de/en/",
+    "requirements": ["Bachelor's degree", "Relevant academic background"],
+    "tags": ["Fully Funded", "Germany"]
+  },
+  {
+    "type": "scholarship",
+    "title": "Chevening Scholarship",
+    "organization": "UK Government",
+    "description": "Fully funded UK government scholarship for future leaders.",
+    "location": "UK",
+    "deadline": "2027-11-05",
+    "url": "https://www.chevening.org/",
+    "requirements": ["2+ years work experience", "Bachelor's degree"],
+    "tags": ["Fully Funded", "UK", "Leadership"]
+  },
+  {
+    "type": "scholarship",
+    "title": "Knight-Hennessy Scholars",
+    "organization": "Stanford University",
+    "description": "Fully funded graduate scholarship at Stanford across all schools.",
+    "location": "Stanford, CA, USA",
+    "deadline": "2027-10-08",
+    "url": "https://knight-hennessy.stanford.edu/",
+    "requirements": ["Bachelor's degree completed within last 7 years", "Leadership potential"],
+    "tags": ["Fully Funded", "USA", "Leadership"]
+  },
+  {
+    "type": "internship",
+    "title": "Software Engineering Intern",
+    "organization": "Systems Limited",
+    "description": "Internship working on enterprise software products across the SDLC.",
+    "location": "Karachi, Pakistan",
+    "deadline": "2026-09-30",
+    "url": "https://www.systemsltd.com/careers",
+    "requirements": ["Currently enrolled CS student", "Python or Java", "SQL basics"],
+    "tags": ["Software Engineering", "Local"]
+  },
+  {
+    "type": "internship",
+    "title": "QA/SQA Intern",
+    "organization": "Techlogix",
+    "description": "Internship focused on software quality assurance, test automation, and manual testing.",
+    "location": "Lahore, Pakistan",
+    "deadline": "2026-10-15",
+    "url": "https://www.techlogix.com/careers/",
+    "requirements": ["CS/SE student", "Basic testing knowledge", "Attention to detail"],
+    "tags": ["SQA", "Testing", "Local"]
+  },
+  {
+    "type": "internship",
+    "title": "STEP Internship Program",
+    "organization": "Google",
+    "description": "Summer internship for early-career university students in technical roles.",
+    "location": "Remote / Various",
+    "deadline": "2026-11-01",
+    "url": "https://buildyourfuture.withgoogle.com/programs/step",
+    "requirements": ["1st or 2nd year university student", "Programming coursework"],
+    "tags": ["Software Engineering", "International"]
+  },
+  {
+    "type": "internship",
+    "title": "Full-Stack Web Development Intern",
+    "organization": "Folio3",
+    "description": "Hands-on internship building full-stack web applications with modern JS frameworks.",
+    "location": "Karachi, Pakistan",
+    "deadline": "2026-09-20",
+    "url": "https://www.folio3.com/careers/",
+    "requirements": ["React/Node experience", "Git familiarity"],
+    "tags": ["Full-Stack", "Web Development", "Local"]
+  },
+  {
+    "type": "job",
+    "title": "Junior Project Coordinator",
+    "organization": "Bano Qabil Program Partner",
+    "description": "Entry-level role coordinating technical training project timelines and deliverables.",
+    "location": "Karachi, Pakistan",
+    "deadline": "2026-10-01",
+    "url": "",
+    "requirements": ["Recent CS/business graduate", "Strong communication skills"],
+    "tags": ["Project Management", "Entry-Level"]
+  },
+  {
+    "type": "certification",
+    "title": "ISTQB Foundation Level",
+    "organization": "ISTQB",
+    "description": "Industry-standard software testing certification, widely recognized for SQA roles.",
+    "location": "Online / Global",
+    "deadline": "",
+    "url": "https://www.istqb.org/",
+    "requirements": ["No prerequisites"],
+    "tags": ["SQA", "Testing", "Certification"]
+  },
+  {
+    "type": "certification",
+    "title": "Google Project Management Certificate",
+    "organization": "Google (via Coursera)",
+    "description": "Professional certificate covering project management fundamentals and tools.",
+    "location": "Online / Global",
+    "deadline": "",
+    "url": "https://www.coursera.org/professional-certificates/google-project-management",
+    "requirements": ["No prerequisites"],
+    "tags": ["Project Management", "Certification"]
+  },
+  {
+    "type": "certification",
+    "title": "AWS Certified Cloud Practitioner",
+    "organization": "Amazon Web Services",
+    "description": "Foundational certification covering core AWS cloud concepts.",
+    "location": "Online / Global",
+    "deadline": "",
+    "url": "https://aws.amazon.com/certification/certified-cloud-practitioner/",
+    "requirements": ["No prerequisites"],
+    "tags": ["Cloud", "Certification"]
+  }
+]

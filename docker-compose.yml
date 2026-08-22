@@ -1,0 +1,22 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: steerium-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: steerium
+      POSTGRES_PASSWORD: steerium_dev
+      POSTGRES_DB: steerium
+    ports:
+      - "5432:5432"
+    volumes:
+      - steerium_pgdata:/var/lib/postgresql/data
+      - ./docker/initdb:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U steerium -d steerium"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  steerium_pgdata:
