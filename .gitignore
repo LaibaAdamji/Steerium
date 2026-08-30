@@ -11,12 +11,9 @@ dist/
 .vite/
 
 # Environment
-.env
-.env.*
 !.env.example
 
 # IDE
-.vscode/
 .idea/
 
 # OS
@@ -30,3 +27,4 @@ htmlcov/
 # Local database/data
 *.db
 *.sqlite
+config.bat
