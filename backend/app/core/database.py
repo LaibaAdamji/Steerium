@@ -10,7 +10,14 @@ from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True, future=True)
+# Supabase-style poolers (PgBouncer in transaction mode) break psycopg's
+# automatic prepared statements. Disable them when the URL asks for it —
+# direct connections (local docker Postgres) keep the default behavior.
+_kwargs = {"pool_pre_ping": True, "future": True}
+if "pooler.supabase.com" in settings.DATABASE_URL:
+    _kwargs["connect_args"] = {"prepare_threshold": None}
+
+engine = create_engine(settings.DATABASE_URL, **_kwargs)
 
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 

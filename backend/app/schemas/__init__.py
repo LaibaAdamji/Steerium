@@ -4,3 +4,5 @@ from app.schemas.opportunity import OpportunityResponse  # noqa: F401
 from app.schemas.application import ApplicationCreate, ApplicationUpdate, ApplicationResponse  # noqa: F401
 from app.schemas.dashboard import DashboardResponse  # noqa: F401
 from app.schemas.roadmap_item import MilestoneResponse, TaskResponse  # noqa: F401
+from app.schemas.document import DocumentResponse, DocumentDetailResponse  # noqa: F401
+from app.schemas.chat import ChatRequest, ChatResponse, Citation  # noqa: F401
