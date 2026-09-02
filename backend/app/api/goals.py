@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import Goal
+from app.models import Goal, Profile
 from app.models.enums import GoalStatus, RoadmapItemType
 from app.schemas.goal import GoalCreate, GoalListResponse, GoalResponse
+from app.services.ai_provider import AIProviderError
+from app.services.roadmap_generator import generate_roadmap
 
 router = APIRouter(prefix="/api", tags=["goals"])
 
@@ -94,4 +96,31 @@ def get_goal(goal_id: uuid.UUID, db: Session = Depends(get_db)):
     goal = db.query(Goal).filter(Goal.id == goal_id).first()
     if not goal:
         raise HTTPException(status_code=404, detail="Goal not found")
+    return _build_goal_response(goal)
+
+
+@router.post("/goals/{goal_id}/generate-roadmap", response_model=GoalResponse)
+def generate_goal_roadmap(goal_id: uuid.UUID, db: Session = Depends(get_db)):
+    """
+    Generate (or regenerate) the goal's roadmap with Qwen. Replaces any
+    existing roadmap for the goal. Returns the full goal with its new
+    milestone → task tree.
+    """
+    goal = db.query(Goal).filter(Goal.id == goal_id).first()
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+
+    profile = db.query(Profile).filter(Profile.id == goal.profile_id).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found for this goal")
+
+    try:
+        generate_roadmap(goal, profile, db)
+    except AIProviderError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Roadmap generation failed: {exc}. The existing roadmap (if any) was kept.",
+        )
+
+    db.refresh(goal)
     return _build_goal_response(goal)
