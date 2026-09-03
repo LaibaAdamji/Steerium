@@ -184,18 +184,42 @@ steerium/
 
 ## Environment Variables
 
+### Backend (`backend/.env`)
+
 ```env
+# Database (PostgreSQL with pgvector)
+DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/steerium
+
+# Auth session signing — any random 32+ char string in production
+SESSION_SECRET=change-me-in-production
+ENV=development
+
+# Demo account created by the seed script (judges use these defaults)
+DEMO_EMAIL=demo@steerium.app
+DEMO_PASSWORD=steerium-demo-2026
+
+# Alibaba Cloud Model Studio (Qwen AI)
 MODEL_STUDIO_API_KEY=
 MODEL_STUDIO_BASE_URL=
 MODEL_STUDIO_MODEL=qwen-plus
 MODEL_STUDIO_EMBEDDING_MODEL=text-embedding-v4
 
-DATABASE_URL=
-
 CORS_ORIGINS=http://localhost:5173
 ```
 
+### Frontend (`frontend/.env`) — optional in dev
+
+```env
+# Backend base URL. Leave blank in dev (Vite proxies /api → localhost:8000).
+# Set to your deployed API URL in production.
+VITE_API_URL=
+```
+
 Do not commit real API keys.
+
+### Demo account
+
+The seed script (`backend/scripts/seed_db.py`) creates a demo user with `DEMO_EMAIL` / `DEMO_PASSWORD`. The login page has a **"Fill demo account"** button that pre-fills these defaults — judges can explore a fully-seeded workspace with one click.
 
 ## Local Development
 
@@ -212,7 +236,18 @@ python -m venv .venv
 source .venv/bin/activate
 
 pip install -r requirements.txt
+
+# Run migrations (creates users table + links profiles)
+alembic upgrade head
+
+# Seed demo data + create demo account
+python scripts/seed_db.py
+
+# Start server
 uvicorn app.main:app --reload
+
+# Tests
+pytest
 ```
 
 ### Frontend
@@ -221,6 +256,9 @@ uvicorn app.main:app --reload
 cd frontend
 npm install
 npm run dev
+
+# Production build (tsc --noEmit + vite build)
+npm run build
 ```
 
 ## MVP Non-Goals

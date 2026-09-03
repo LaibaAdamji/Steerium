@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import JSON, DateTime, String, Text, func
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -11,13 +11,15 @@ from app.core.database import Base
 
 class Profile(Base):
     """
-    Acts as the "user" for this hackathon MVP — no auth system, so the
-    seeded demo profile is effectively the single tenant the whole app
-    revolves around. Every other table hangs off profile_id.
+    Career data for exactly one authenticated user (1:1 via user_id).
+    Every other table hangs off profile_id.
     """
     __tablename__ = "profiles"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=True, index=True
+    )
     name: Mapped[str] = mapped_column(String(255))
 
     # Free-form structured fields. JSON keeps this flexible without extra
@@ -35,3 +37,4 @@ class Profile(Base):
     documents: Mapped[List["Document"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
     applications: Mapped[List["Application"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
     saved_opportunities: Mapped[List["SavedOpportunity"]] = relationship(back_populates="profile", cascade="all, delete-orphan")
+    user: Mapped[Optional["User"]] = relationship(back_populates="profile")

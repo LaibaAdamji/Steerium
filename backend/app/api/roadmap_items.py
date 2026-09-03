@@ -1,7 +1,8 @@
 """
 Roadmap item updates — lets the UI tick milestones/tasks complete, which
 drives the dashboard progress counts. Keeps `completed` and `status` in
-sync so the two fields never disagree.
+sync so the two fields never disagree. Items must belong to the
+authenticated user's goal.
 """
 import uuid
 
@@ -9,7 +10,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import RoadmapItem
+from app.api.deps import get_current_profile
+from app.models import Goal, Profile, RoadmapItem
 from app.models.enums import RoadmapItemStatus
 from app.schemas.roadmap_item import RoadmapItemUpdate, TaskResponse
 
@@ -41,10 +43,20 @@ def _sync_item(item: RoadmapItem, data: RoadmapItemUpdate) -> None:
 
 
 @router.patch("/roadmap-items/{item_id}", response_model=TaskResponse)
-def update_roadmap_item(item_id: uuid.UUID, data: RoadmapItemUpdate, db: Session = Depends(get_db)):
+def update_roadmap_item(
+    item_id: uuid.UUID,
+    data: RoadmapItemUpdate,
+    profile: Profile = Depends(get_current_profile),
+    db: Session = Depends(get_db),
+):
     """Mark a milestone or task complete/incomplete (or set status directly)."""
     item = db.query(RoadmapItem).filter(RoadmapItem.id == item_id).first()
     if not item:
+        raise HTTPException(status_code=404, detail="Roadmap item not found")
+
+    # Ownership: the item's goal must belong to the current user's profile
+    goal = db.query(Goal).filter(Goal.id == item.goal_id).first()
+    if not goal or goal.profile_id != profile.id:
         raise HTTPException(status_code=404, detail="Roadmap item not found")
 
     _sync_item(item, data)

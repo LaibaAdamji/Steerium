@@ -23,6 +23,16 @@ class Settings(BaseSettings):
     # --- CORS ---
     CORS_ORIGINS: str = "http://localhost:5173"
 
+    # --- Auth ---
+    # Signs the session cookie. Set a real random value in production
+    # (e.g. `python -c "import secrets; print(secrets.token_hex(32))"`).
+    SESSION_SECRET: str = "dev-only-insecure-session-secret-change-me"
+
+    # Demo account created by scripts/seed_db.py — non-secret, documented
+    # for judges so the golden path can be demoed without signing up.
+    DEMO_EMAIL: str = "demo@steerium.app"
+    DEMO_PASSWORD: str = "steerium-demo-2026"
+
     # --- Alibaba Model Studio / AI provider ---
     MODEL_STUDIO_API_KEY: str = ""
     MODEL_STUDIO_BASE_URL: str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"

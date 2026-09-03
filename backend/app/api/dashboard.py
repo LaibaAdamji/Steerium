@@ -1,15 +1,15 @@
 """
-Dashboard aggregation — pulls from profile, goals, roadmap_items,
-opportunities, saved_opportunities, and applications. Returns everything
-the dashboard shell needs in one round trip.
+Dashboard aggregation — pulls from the authenticated user's profile, goals,
+roadmap_items, opportunities, saved_opportunities, and applications.
+Returns everything the dashboard shell needs in one round trip.
 """
-import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.api.deps import get_current_profile
 from app.models import (
     Application,
     Goal,
@@ -25,6 +25,7 @@ from app.schemas.dashboard import (
     DeadlineItem,
     GoalSummary,
     MilestoneProgress,
+    NextTask,
     SavedOpportunityItem,
 )
 
@@ -33,18 +34,9 @@ router = APIRouter(prefix="/api", tags=["dashboard"])
 
 @router.get("/dashboard", response_model=DashboardResponse)
 def dashboard(
-    profile_id: uuid.UUID | None = Query(None, description="Profile ID (defaults to first profile)"),
+    profile: Profile = Depends(get_current_profile),
     db: Session = Depends(get_db),
 ):
-    # Resolve profile
-    if profile_id:
-        profile = db.query(Profile).filter(Profile.id == profile_id).first()
-    else:
-        profile = db.query(Profile).first()
-
-    if not profile:
-        return DashboardResponse(application_pipeline=ApplicationPipeline())
-
     pid = profile.id
 
     # --- Active goal + roadmap progress ---
@@ -55,6 +47,7 @@ def dashboard(
     )
 
     goal_summary = None
+    next_task: NextTask | None = None
     upcoming_deadlines: list[DeadlineItem] = []
 
     if goal:
@@ -100,6 +93,8 @@ def dashboard(
         goal_summary = GoalSummary(
             id=goal.id,
             title=goal.title,
+            description=goal.description,
+            target_date=goal.target_date,
             status=goal.status.value,
             milestones_completed=milestones_done,
             milestones_total=len(milestones),
@@ -107,6 +102,24 @@ def dashboard(
             tasks_total=len(tasks),
             milestones=milestone_progress,
         )
+
+        # Next action: first incomplete task, in milestone order then task order
+        milestone_order = {m.id: m.order for m in milestones}
+        incomplete = sorted(
+            (t for t in tasks if not t.completed),
+            key=lambda t: (milestone_order.get(t.parent_id, 999), t.order),
+        )
+        if incomplete:
+            t = incomplete[0]
+            milestone = next((m for m in milestones if m.id == t.parent_id), None)
+            next_task = NextTask(
+                id=t.id,
+                title=t.title,
+                milestone_title=milestone.title if milestone else None,
+                rationale=t.rationale,
+                priority=t.priority.value,
+                due_date=t.due_date,
+            )
 
         # Roadmap deadlines (tasks + milestones with due_date, not completed)
         for item in (milestones + tasks):
@@ -120,7 +133,7 @@ def dashboard(
                     )
                 )
 
-    # --- Opportunity deadlines ---
+    # --- Opportunity deadlines (curated catalog, shown to everyone) ---
     opp_deadlines = (
         db.query(Opportunity)
         .filter(Opportunity.deadline >= date.today())
@@ -182,7 +195,9 @@ def dashboard(
             )
 
     return DashboardResponse(
+        profile_name=profile.name,
         goal=goal_summary,
+        next_task=next_task,
         upcoming_deadlines=upcoming_deadlines,
         application_pipeline=pipeline,
         saved_opportunities=saved_opportunities,

@@ -6,7 +6,6 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ApplicationCreate(BaseModel):
-    profile_id: uuid.UUID
     opportunity_id: uuid.UUID
     status: str = "interested"
     notes: Optional[str] = None

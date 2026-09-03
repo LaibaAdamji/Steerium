@@ -4,11 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "node init && vite",
+    "build": "node init && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "lucide-react": "^1.40.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-router-dom": "^7.18.3"
