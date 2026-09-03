@@ -39,13 +39,18 @@
 - `app/services/rag.py` — retrieval (pgvector cosine top-5 with keyword ILIKE fallback, mode reported per request) + context assembly (profile, active goal, saved opportunities, application statuses, retrieved chunks) + grounding prompt that distinguishes known facts from assumptions and cites filenames
 - `POST /api/documents` (multipart upload), `GET /api/documents`, `GET /api/documents/{id}` (extraction status), `DELETE /api/documents/{id}` (cascades chunks)
 - `POST /api/chat` — 404 no profile, 422 bad question, 502 on AI failure; returns answer + citations (document_id, filename, chunk_index, snippet, similarity) + retrieval_mode
-- 36 pytest tests pass (20 new for documents + chat; provider faked, tiny in-memory PDFs generated with PyMuPDF itself)
+- 42 pytest tests (provider faked, tiny in-memory PDFs generated with PyMuPDF itself)
+
+### Frontend Handoff (Phase 3)
+- React 19 + Vite 8 + TypeScript + Tailwind v4 app in `frontend/`, styled from the Steerium OS design system (navy sidebar, sage/moss actions and progress, eucalyptus chips, Inter + JetBrains Mono)
+- Pages: Dashboard (goal progress, deadlines, pipeline, saved), Goal workspace (roadmap checklist with optimistic toggles + AI regenerate), Opportunities (search/filter/save/track), Applications (pipeline + status dropdowns), Documents (upload/extract/delete), AI Assistant (chat with citations + retrieval mode), Profile (view/edit)
+- Vite dev server proxies `/api` → `:8000`; typed API client mirrors every Pydantic schema
 
 ### Infrastructure
 - Database migrated to Supabase (transaction pooler, port 6543, `sslmode=require`); engine sets `prepare_threshold=None` for pooler URLs; pgvector 0.8.2 enabled; schema stamped at `a52e4c3a828b` (tables pre-existed from an earlier `create_all`); seeded (demo profile, goal + 6 milestones/12 tasks, 17 opportunities)
 - `alembic==1.13.2`, `openai==3.6.0`, `pymupdf==1.24.9`, `python-multipart==0.0.12` added to `requirements.txt`
 
-### API Endpoints (18 routes)
+### API Endpoints (19 routes)
 
 #### Profile
 | Method | Path | Description |
@@ -62,6 +67,11 @@
 | `POST` | `/api/goals` | Create a goal |
 | `GET` | `/api/goals/{id}` | Full goal with nested milestone→task tree |
 | `POST` | `/api/goals/{id}/generate-roadmap` | Generate/regenerate the roadmap with Qwen (replaces existing) |
+
+#### Roadmap Items
+| Method | Path | Description |
+|---|---|---|
+| `PATCH` | `/api/roadmap-items/{id}` | Mark milestone/task complete (keeps `completed` and `status` in sync) |
 
 #### Opportunities
 | Method | Path | Description |
@@ -111,5 +121,4 @@
 ## Not Yet Started
 - Opportunity match scoring
 - Resume/ATS scoring (P1)
-- Frontend (React + Vite + Tailwind) — not scaffolded yet
 - **Live AI features need `MODEL_STUDIO_API_KEY` in `backend/.env`** — until set: roadmap generation and chat return 502 with a clear message; document upload still works (chunks stored un-embedded, chat retrieval falls back to keyword mode)

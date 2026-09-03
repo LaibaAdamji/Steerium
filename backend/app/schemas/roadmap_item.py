@@ -8,6 +8,12 @@ from typing import List, Optional
 from pydantic import BaseModel, ConfigDict
 
 
+class RoadmapItemUpdate(BaseModel):
+    """Partial update — used for marking milestones/tasks complete."""
+    completed: Optional[bool] = None
+    status: Optional[str] = None
+
+
 class TaskResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
