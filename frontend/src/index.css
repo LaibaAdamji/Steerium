@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+/*
+  Steerium design tokens (docs/DESIGN.md — "Steerium OS" system).
+  Corporate Modern / Minimalist: navy anchor, sage & moss for progress/AI,
+  low-contrast outlines, 4px spacing rhythm.
+*/
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+
+  /* Core palette */
+  --color-canvas: #f9fafb;      /* system background */
+  --color-card: #ffffff;        /* cards, modals */
+  --color-navy: #011936;        /* primary brand, headings, sidebar */
+  --color-navy-deep: #0f1d2a;   /* body text on light */
+  --color-sage: #9fc490;        /* primary actions, focus */
+  --color-moss: #c0dfa1;        /* success, progress fills */
+  --color-slate-ink: #465362;   /* secondary text, icons */
+  --color-eucalyptus: #82a3a1;  /* chips, tags */
+  --color-hairline: #e5e7eb;    /* card borders */
+  --color-separator: #f3f4f6;   /* list separators */
+  --color-error: #ba1a1a;
+  --color-sage-dim: #6f9c60;    /* sage, darkened for text on white (AA) */
+
+  /* Shape language: buttons/inputs 4px, cards 8px, AI blocks 12px */
+  --radius-btn: 0.25rem;
+  --radius-card: 0.5rem;
+  --radius-ai: 0.75rem;
+}
+
+body {
+  @apply bg-canvas text-navy-deep font-sans antialiased;
+}
+
+/* Uppercase mono label — used for metadata, status, section headers */
+.label-mono {
+  @apply font-mono text-xs font-medium uppercase tracking-widest;
+}
+
+/* Single "Soft Focus" shadow reserved for floating/active elements */
+.shadow-focus {
+  box-shadow: 0px 4px 12px rgba(1, 25, 54, 0.05);
+}
+
+/* Focus ring: sage border + soft glow (per design spec for inputs) */
+.input-focus {
+  @apply focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/30;
+}
