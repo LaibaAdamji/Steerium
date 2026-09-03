@@ -22,6 +22,7 @@ from app.models.enums import GoalStatus, Priority, RoadmapItemType, RoadmapItemS
 from app.services import roadmap_generator
 from app.services.ai_provider import AIProviderError
 from app.services.roadmap_generator import generate_roadmap, validate_payload
+from tests.conftest import override_auth
 
 client = TestClient(app)
 
@@ -178,6 +179,7 @@ def test_generate_roadmap_endpoint_404():
     db = MagicMock()
     db.query.return_value.filter.return_value.first.return_value = None
     _override_db(db)
+    override_auth(make_goal_and_profile()[1])
 
     response = client.post(f"/api/goals/{uuid.uuid4()}/generate-roadmap")
     assert response.status_code == 404
@@ -194,6 +196,7 @@ def test_generate_roadmap_endpoint_502_on_provider_error():
 
     db.query.side_effect = fake_query
     _override_db(db)
+    override_auth(profile)
 
     with patch.object(roadmap_generator, "get_ai_provider", return_value=FakeProvider(error=AIProviderError("boom"))):
         response = client.post(f"/api/goals/{goal.id}/generate-roadmap")
@@ -240,6 +243,7 @@ def test_generate_roadmap_endpoint_happy_path():
     db.query.side_effect = fake_query
     db.add.side_effect = fake_add
     _override_db(db)
+    override_auth(profile)
 
     provider = FakeProvider(payload=make_payload(n_milestones=4, tasks_per=2))
 

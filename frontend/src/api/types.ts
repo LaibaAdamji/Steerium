@@ -1,5 +1,30 @@
 // Mirror of the FastAPI Pydantic response schemas (backend/app/schemas).
 
+// --- Auth ---
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  profile: Profile | null;
+}
+
+export interface SignupInput {
+  email: string;
+  password: string;
+  name: string;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
 export interface ExperienceItem {
   title?: string;
   org?: string;
@@ -96,12 +121,23 @@ export interface MilestoneProgress {
 export interface GoalSummary {
   id: string;
   title: string;
+  description?: string | null;
+  target_date?: string | null;
   status: string;
   milestones_completed: number;
   milestones_total: number;
   tasks_completed: number;
   tasks_total: number;
   milestones: MilestoneProgress[];
+}
+
+export interface NextTask {
+  id: string;
+  title: string;
+  milestone_title?: string | null;
+  rationale?: string | null;
+  priority: string;
+  due_date?: string | null;
 }
 
 export interface DeadlineItem {
@@ -130,7 +166,9 @@ export interface SavedOpportunityItem {
 }
 
 export interface Dashboard {
+  profile_name?: string | null;
   goal?: GoalSummary | null;
+  next_task?: NextTask | null;
   upcoming_deadlines: DeadlineItem[];
   application_pipeline: ApplicationPipeline;
   saved_opportunities: SavedOpportunityItem[];
@@ -170,6 +208,12 @@ export interface ChatMessage {
   content: string;
   citations?: Citation[];
   retrievalMode?: string;
+}
+
+export interface GoalCreateInput {
+  title: string;
+  description?: string | null;
+  target_date?: string | null;
 }
 
 export const OPPORTUNITY_TYPES = [

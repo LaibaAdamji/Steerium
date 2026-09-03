@@ -9,10 +9,14 @@ from fastapi.testclient import TestClient
 
 from app.core.database import get_db
 from app.main import app
-from app.models import RoadmapItem
-from app.models.enums import Priority, RoadmapItemStatus, RoadmapItemType
+from app.models import Goal, Profile, RoadmapItem
+from app.models.enums import GoalStatus, Priority, RoadmapItemStatus, RoadmapItemType
+from tests.conftest import override_auth
 
 client = TestClient(app)
+
+
+PROFILE_ID = uuid.uuid4()
 
 
 def make_item(completed=False, status=RoadmapItemStatus.not_started) -> RoadmapItem:
@@ -31,13 +35,42 @@ def make_item(completed=False, status=RoadmapItemStatus.not_started) -> RoadmapI
     )
 
 
+def make_profile() -> Profile:
+    return Profile(id=PROFILE_ID, name="Test User")
+
+
+def make_goal(goal_id) -> Goal:
+    return Goal(
+        id=goal_id,
+        profile_id=PROFILE_ID,
+        title="MS in Computer Science",
+        status=GoalStatus.active,
+    )
+
+
 def _override_db(db):
     app.dependency_overrides[get_db] = lambda: db
 
 
 def _mock_db(item):
+    """Session where RoadmapItem and its owning Goal both resolve."""
+    goal = make_goal(item.goal_id)
     db = MagicMock()
-    db.query.return_value.filter.return_value.first.return_value = item
+
+    def fake_query(model, *args, **kwargs):
+        q = MagicMock()
+        q.filter.return_value.first.return_value = item if model is RoadmapItem else goal
+        return q
+
+    db.query.side_effect = fake_query
+    return db
+
+
+def _setup(item):
+    """Override db + auth, return the db mock for assertions."""
+    db = _mock_db(item)
+    _override_db(db)
+    override_auth(make_profile())
     return db
 
 
@@ -47,8 +80,7 @@ def teardown_function():
 
 def test_patch_completes_item_and_syncs_status():
     item = make_item()
-    db = _mock_db(item)
-    _override_db(db)
+    db = _setup(item)
 
     response = client.patch(f"/api/roadmap-items/{item.id}", json={"completed": True})
 
@@ -61,8 +93,7 @@ def test_patch_completes_item_and_syncs_status():
 
 def test_patch_uncompletes_item_resets_status():
     item = make_item(completed=True, status=RoadmapItemStatus.completed)
-    db = _mock_db(item)
-    _override_db(db)
+    db = _setup(item)
 
     response = client.patch(f"/api/roadmap-items/{item.id}", json={"completed": False})
 
@@ -73,8 +104,7 @@ def test_patch_uncompletes_item_resets_status():
 
 def test_patch_explicit_status_overrides_derivation():
     item = make_item()
-    db = _mock_db(item)
-    _override_db(db)
+    db = _setup(item)
 
     response = client.patch(
         f"/api/roadmap-items/{item.id}",
@@ -88,8 +118,7 @@ def test_patch_explicit_status_overrides_derivation():
 
 def test_patch_rejects_invalid_status():
     item = make_item()
-    db = _mock_db(item)
-    _override_db(db)
+    db = _setup(item)
 
     response = client.patch(f"/api/roadmap-items/{item.id}", json={"status": "done-ish"})
 
@@ -99,8 +128,7 @@ def test_patch_rejects_invalid_status():
 
 def test_patch_rejects_empty_body():
     item = make_item()
-    db = _mock_db(item)
-    _override_db(db)
+    db = _setup(item)
 
     response = client.patch(f"/api/roadmap-items/{item.id}", json={})
 
@@ -108,9 +136,36 @@ def test_patch_rejects_empty_body():
 
 
 def test_patch_404_unknown_item():
-    db = _mock_db(None)
+    db = MagicMock()
+    db.query.return_value.filter.return_value.first.return_value = None
     _override_db(db)
+    override_auth(make_profile())
 
     response = client.patch(f"/api/roadmap-items/{uuid.uuid4()}", json={"completed": True})
+
+    assert response.status_code == 404
+
+
+def test_patch_404_when_item_belongs_to_another_user():
+    """Cross-user access: item exists but its goal belongs to another profile."""
+    item = make_item()
+    foreign_goal = Goal(
+        id=item.goal_id,
+        profile_id=uuid.uuid4(),  # someone else's profile
+        title="Someone else's goal",
+        status=GoalStatus.active,
+    )
+    db = MagicMock()
+
+    def fake_query(model, *args, **kwargs):
+        q = MagicMock()
+        q.filter.return_value.first.return_value = item if model is RoadmapItem else foreign_goal
+        return q
+
+    db.query.side_effect = fake_query
+    _override_db(db)
+    override_auth(make_profile())
+
+    response = client.patch(f"/api/roadmap-items/{item.id}", json={"completed": True})
 
     assert response.status_code == 404

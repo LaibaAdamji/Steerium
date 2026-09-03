@@ -23,6 +23,7 @@ from app.services.document_service import (
     extract_text,
     ingest_document,
 )
+from tests.conftest import override_auth
 
 client = TestClient(app)
 
@@ -181,10 +182,7 @@ def test_upload_endpoint_txt_happy_path():
 
     def fake_query(model, *args, **kwargs):
         q = MagicMock()
-        if model is Profile:
-            q.filter.return_value.first.return_value = profile
-            q.first.return_value = profile
-        elif model is DocumentChunk:
+        if model is DocumentChunk:
             q.filter.return_value.all.return_value = chunks_seen
         return q
 
@@ -199,6 +197,7 @@ def test_upload_endpoint_txt_happy_path():
     db.query.side_effect = fake_query
     db.add.side_effect = fake_add
     _override_db(db)
+    override_auth(profile)
 
     provider = FakeProvider()
     with patch.object(document_service, "get_ai_provider", return_value=provider):
@@ -223,12 +222,13 @@ def test_upload_endpoint_rejects_unsupported_type():
 
     def fake_query(model, *args, **kwargs):
         q = MagicMock()
-        if model is Profile:
-            q.first.return_value = profile
+        if model is DocumentChunk:
+            q.filter.return_value.all.return_value = []
         return q
 
     db.query.side_effect = fake_query
     _override_db(db)
+    override_auth(profile)
 
     response = client.post(
         "/api/documents",
@@ -238,19 +238,13 @@ def test_upload_endpoint_rejects_unsupported_type():
     assert "Unsupported file type" in response.json()["detail"]
 
 
-def test_upload_endpoint_404_without_profile():
+def test_upload_endpoint_401_when_anonymous():
+    """No session and no auth override → protected endpoint rejects."""
     db = MagicMock()
-
-    def fake_query(model, *args, **kwargs):
-        q = MagicMock()
-        q.first.return_value = None
-        return q
-
-    db.query.side_effect = fake_query
     _override_db(db)
 
     response = client.post(
         "/api/documents",
         files={"file": ("resume.txt", b"skills", "text/plain")},
     )
-    assert response.status_code == 404
+    assert response.status_code == 401

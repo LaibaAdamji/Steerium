@@ -1,4 +1,8 @@
-"""Opportunity listing, filtering, and saving."""
+"""Opportunity listing, filtering, and saving.
+
+Opportunity records themselves are global/curated; saving is user-specific
+and scoped to the authenticated session's profile.
+"""
 import uuid
 from datetime import date
 from typing import Optional
@@ -8,7 +12,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models import Opportunity, SavedOpportunity
+from app.api.deps import get_current_profile
+from app.models import Opportunity, Profile, SavedOpportunity
 from app.models.enums import OpportunityType
 from app.schemas.opportunity import OpportunityResponse
 
@@ -56,31 +61,39 @@ def list_opportunities(
 
 
 @router.post("/opportunities/{opportunity_id}/save", status_code=201)
-def save_opportunity(opportunity_id: uuid.UUID, profile_id: uuid.UUID = Query(...), db: Session = Depends(get_db)):
-    """Bookmark an opportunity for a profile."""
+def save_opportunity(
+    opportunity_id: uuid.UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: Session = Depends(get_db),
+):
+    """Bookmark an opportunity for the authenticated user."""
     opp = db.query(Opportunity).filter(Opportunity.id == opportunity_id).first()
     if not opp:
         raise HTTPException(status_code=404, detail="Opportunity not found")
 
     existing = (
         db.query(SavedOpportunity)
-        .filter(SavedOpportunity.profile_id == profile_id, SavedOpportunity.opportunity_id == opportunity_id)
+        .filter(SavedOpportunity.profile_id == profile.id, SavedOpportunity.opportunity_id == opportunity_id)
         .first()
     )
     if existing:
-        return {"message": "Already saved", "profile_id": str(profile_id), "opportunity_id": str(opportunity_id)}
+        return {"message": "Already saved", "profile_id": str(profile.id), "opportunity_id": str(opportunity_id)}
 
-    db.add(SavedOpportunity(profile_id=profile_id, opportunity_id=opportunity_id))
+    db.add(SavedOpportunity(profile_id=profile.id, opportunity_id=opportunity_id))
     db.commit()
-    return {"message": "Saved", "profile_id": str(profile_id), "opportunity_id": str(opportunity_id)}
+    return {"message": "Saved", "profile_id": str(profile.id), "opportunity_id": str(opportunity_id)}
 
 
 @router.delete("/opportunities/{opportunity_id}/save", status_code=200)
-def unsave_opportunity(opportunity_id: uuid.UUID, profile_id: uuid.UUID = Query(...), db: Session = Depends(get_db)):
+def unsave_opportunity(
+    opportunity_id: uuid.UUID,
+    profile: Profile = Depends(get_current_profile),
+    db: Session = Depends(get_db),
+):
     """Remove a bookmark."""
     saved = (
         db.query(SavedOpportunity)
-        .filter(SavedOpportunity.profile_id == profile_id, SavedOpportunity.opportunity_id == opportunity_id)
+        .filter(SavedOpportunity.profile_id == profile.id, SavedOpportunity.opportunity_id == opportunity_id)
         .first()
     )
     if not saved:
@@ -91,11 +104,14 @@ def unsave_opportunity(opportunity_id: uuid.UUID, profile_id: uuid.UUID = Query(
 
 
 @router.get("/opportunities/saved", response_model=list[uuid.UUID])
-def list_saved_opportunity_ids(profile_id: uuid.UUID = Query(...), db: Session = Depends(get_db)):
-    """Return just the opportunity IDs a profile has saved — lightweight for UI badge rendering."""
+def list_saved_opportunity_ids(
+    profile: Profile = Depends(get_current_profile),
+    db: Session = Depends(get_db),
+):
+    """Return just the opportunity IDs the current user has saved — lightweight for UI badge rendering."""
     rows = (
         db.query(SavedOpportunity.opportunity_id)
-        .filter(SavedOpportunity.profile_id == profile_id)
+        .filter(SavedOpportunity.profile_id == profile.id)
         .all()
     )
     return [r[0] for r in rows]
