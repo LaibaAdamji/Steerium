@@ -12,7 +12,7 @@ from app.core.config import settings
 
 # Supabase-style poolers (PgBouncer in transaction mode) break psycopg's
 # automatic prepared statements. Disable them when the URL asks for it —
-# direct connections (local docker Postgres) keep the default behavior.
+# direct connections (e.g. a local Postgres install) keep the default.
 _kwargs = {"pool_pre_ping": True, "future": True}
 if "pooler.supabase.com" in settings.DATABASE_URL:
     _kwargs["connect_args"] = {"prepare_threshold": None}

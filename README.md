@@ -134,20 +134,19 @@ Alibaba Cloud Model Studio currently exposes Qwen through OpenAI-compatible APIs
 ## Architecture
 
 ```text
-React + Vite + Tailwind
+React + Vite + Tailwind (Vercel static build)
           |
-          | REST / JSON
+          | REST / JSON — same-origin /api/* rewrites to the serverless function
           v
-      FastAPI API
+FastAPI (Vercel Python serverless function, api/index.py)
           |
     +-----+-------------------+
     |                         |
     v                         v
-PostgreSQL + pgvector     Alibaba Model Studio
-    |                         |
+Supabase PostgreSQL       Alibaba Model Studio
+(pgvector)                     |
     |                         +--> Qwen generation
     |                         +--> text-embedding-v4
-    |
     +--> users/profiles
     +--> goals
     +--> tasks
@@ -161,24 +160,27 @@ PostgreSQL + pgvector     Alibaba Model Studio
 
 ```text
 steerium/
-├── frontend/
+├── frontend/            # React + Vite + Tailwind (Vercel static build)
 │   ├── src/
-│   └── ...
-├── backend/
+│   └── package.json
+├── backend/             # FastAPI app (run locally with uvicorn)
 │   ├── app/
-│   │   ├── api/
-│   │   ├── core/
-│   │   ├── db/
-│   │   ├── models/
-│   │   ├── schemas/
-│   │   ├── services/
+│   │   ├── api/         # routers
+│   │   ├── core/        # config, database, security
+│   │   ├── models/      # SQLAlchemy models
+│   │   ├── schemas/     # Pydantic schemas
+│   │   ├── services/    # AI provider, roadmap, documents, RAG
 │   │   └── main.py
-│   └── tests/
+│   ├── alembic/         # migrations (run against Supabase)
+│   └── requirements.txt # local dev dependencies
+├── api/
+│   └── index.py         # Vercel entrypoint — imports the FastAPI app
 ├── data/
 │   └── opportunities.json
-├── docs/
+├── vercel.json          # build + routing config
+├── requirements.txt     # serverless runtime dependencies
+├── .python-version
 ├── .env.example
-├── .gitignore
 └── README.md
 ```
 
@@ -187,20 +189,16 @@ steerium/
 ### Backend (`backend/.env`)
 
 ```env
-# Database (PostgreSQL with pgvector)
-DATABASE_URL=postgresql+psycopg://user:pass@localhost:5432/steerium
+# Supabase PostgreSQL (transaction pooler)
+DATABASE_URL=postgresql+psycopg://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres?sslmode=require
 
 # Auth session signing — any random 32+ char string in production
 SESSION_SECRET=change-me-in-production
 ENV=development
 
-# Demo account created by the seed script (judges use these defaults)
-DEMO_EMAIL=demo@steerium.app
-DEMO_PASSWORD=steerium-demo-2026
-
 # Alibaba Cloud Model Studio (Qwen AI)
 MODEL_STUDIO_API_KEY=
-MODEL_STUDIO_BASE_URL=
+MODEL_STUDIO_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
 MODEL_STUDIO_MODEL=qwen-plus
 MODEL_STUDIO_EMBEDDING_MODEL=text-embedding-v4
 
@@ -210,8 +208,9 @@ CORS_ORIGINS=http://localhost:5173
 ### Frontend (`frontend/.env`) — optional in dev
 
 ```env
-# Backend base URL. Leave blank in dev (Vite proxies /api → localhost:8000).
-# Set to your deployed API URL in production.
+# Backend base URL. Leave empty in dev (Vite proxies /api → localhost:8000)
+# and for same-origin Vercel deployments. Set only when the API lives on
+# a different domain than the frontend.
 VITE_API_URL=
 ```
 
@@ -222,6 +221,9 @@ Do not commit real API keys.
 The seed script (`backend/scripts/seed_db.py`) creates a demo user with `DEMO_EMAIL` / `DEMO_PASSWORD`. The login page has a **"Fill demo account"** button that pre-fills these defaults — judges can explore a fully-seeded workspace with one click.
 
 ## Local Development
+
+The database is hosted PostgreSQL on Supabase — no local database or Docker
+is needed. Set `DATABASE_URL` in `backend/.env` first (see above).
 
 ### Backend
 
@@ -237,7 +239,7 @@ source .venv/bin/activate
 
 pip install -r requirements.txt
 
-# Run migrations (creates users table + links profiles)
+# Run migrations against Supabase (creates users table + links profiles)
 alembic upgrade head
 
 # Seed demo data + create demo account
@@ -260,6 +262,77 @@ npm run dev
 # Production build (tsc --noEmit + vite build)
 npm run build
 ```
+
+## Deployment (Vercel + Supabase)
+
+One Vercel project serves everything: the React build as static assets and
+the FastAPI app as a Python serverless function. Requests to `/api/*` are
+rewritten to the function; every other path serves the SPA. Session cookies
+work because frontend and API share one domain.
+
+### 1. Supabase database
+
+1. Create a project at [supabase.com](https://supabase.com) (region close to
+   your users).
+2. Enable the `vector` extension: Dashboard → **Database → Extensions →
+   vector → Enable**.
+3. Copy the **Connection Pooling / Transaction mode** connection string
+   (port `6543`) from **Project Settings → Database** and use it as
+   `DATABASE_URL` (append `?sslmode=require`). The engine detects the pooler
+   and disables prepared statements automatically.
+4. Run migrations and seed from your machine:
+
+   ```bash
+   cd backend
+   pip install -r requirements.txt
+   alembic upgrade head
+   python scripts/seed_db.py
+   ```
+
+### 2. Vercel project
+
+1. Push the repo to GitHub, then import it at
+   [vercel.com/new](https://vercel.com/new). `vercel.json` already defines
+   the build (`cd frontend && npm install && npm run build`), the output
+   directory (`frontend/dist`), and routing — leave framework detection as
+   "Other" if asked.
+2. Add environment variables (Project Settings → Environment Variables,
+   Production + Preview):
+
+   | Variable | Value |
+   |---|---|
+   | `DATABASE_URL` | Supabase transaction-pooler URL from step 1 |
+   | `SESSION_SECRET` | `python -c "import secrets; print(secrets.token_hex(32))"` |
+   | `ENV` | `production` |
+   | `MODEL_STUDIO_API_KEY` | Alibaba Cloud Model Studio key |
+   | `MODEL_STUDIO_BASE_URL` | `https://dashscope-intl.aliyuncs.com/compatible-mode/v1` |
+   | `MODEL_STUDIO_MODEL` | `qwen-plus` |
+   | `MODEL_STUDIO_EMBEDDING_MODEL` | `text-embedding-v4` |
+   | `CORS_ORIGINS` | empty (same-origin) or your frontend domain for split deploys |
+
+3. Deploy. Verify `https://<deployment>.vercel.app/api/health` returns
+   `{"status": "ok", "database": "ok"}`.
+
+`VITE_API_URL` stays **unset** for this setup — the frontend calls relative
+`/api/*` paths on its own domain. Only set it (and matching `CORS_ORIGINS`)
+if you split the API onto a separate domain.
+
+### Deploying from the CLI instead
+
+```bash
+npm i -g vercel
+vercel          # preview deployment
+vercel --prod   # production
+```
+
+### Serverless limits to know
+
+- Function timeout is 60s (`maxDuration` in `vercel.json`) — enough for
+  Qwen roadmap/chat calls, but a hard ceiling.
+- Request bodies are capped at ~4.5 MB, so document uploads above that size
+  will fail (the app itself caps uploads at 10 MB).
+- Alembic migrations and the seed script run from your machine against
+  Supabase — there is no migration step on Vercel.
 
 ## MVP Non-Goals
 
