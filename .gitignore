@@ -13,13 +13,13 @@ dist/
 # Local tooling (portable Node.js used during development)
 .tools/
 
+# Vercel CLI project link
+.vercel/
+
 # Environment
-.env
-.env.*
 !.env.example
 
 # IDE
-.vscode/
 .idea/
 
 # OS
@@ -33,3 +33,4 @@ htmlcov/
 # Local database/data
 *.db
 *.sqlite
+config.bat
