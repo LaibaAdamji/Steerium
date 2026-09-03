@@ -1,16 +1,24 @@
-// Thin fetch wrapper over the FastAPI backend. All paths are relative and
-// proxied to :8000 by Vite in dev (see vite.config.ts).
+// Thin fetch wrapper over the FastAPI backend. All request paths are
+// relative in dev (proxied to :8000 by Vite) and prefixed with VITE_API_URL
+// in production deployments. Cookies ride along for session auth.
 import type {
   Application,
+  AuthResponse,
   ChatResponse,
   Dashboard,
   DocumentDetail,
   DocumentItem,
   Goal,
+  GoalCreateInput,
   GoalListItem,
+  LoginInput,
   Opportunity,
   Profile,
+  SignupInput,
 } from "./types";
+
+// Same-origin by default (dev proxy / reverse proxy); override for split deploys.
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export class ApiError extends Error {
   status: number;
@@ -21,8 +29,18 @@ export class ApiError extends Error {
   }
 }
 
+/** Human-readable message for unexpected failures — technical details stay in the console. */
+export function friendlyError(err: unknown): string {
+  console.error(err);
+  if (err instanceof ApiError) return err.message;
+  return "Something went wrong. Please try again.";
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, init);
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "include",
+    ...init,
+  });
   if (!res.ok) {
     let detail = `Request failed (${res.status})`;
     try {
@@ -47,6 +65,24 @@ function jsonInit(method: string, body: unknown): RequestInit {
   };
 }
 
+// --- Auth ---
+
+export function signup(data: SignupInput): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/signup", jsonInit("POST", data));
+}
+
+export function login(data: LoginInput): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/login", jsonInit("POST", data));
+}
+
+export function logout(): Promise<{ message: string }> {
+  return request<{ message: string }>("/api/auth/logout", { method: "POST" });
+}
+
+export function getCurrentUser(): Promise<AuthResponse> {
+  return request<AuthResponse>("/api/auth/me");
+}
+
 // --- Profile ---
 
 export function getProfile(): Promise<Profile> {
@@ -61,6 +97,10 @@ export function updateProfile(data: Partial<Profile>): Promise<Profile> {
 
 export function listGoals(): Promise<GoalListItem[]> {
   return request<GoalListItem[]>("/api/goals");
+}
+
+export function createGoal(data: GoalCreateInput): Promise<Goal> {
+  return request<Goal>("/api/goals", jsonInit("POST", data));
 }
 
 export function getGoal(id: string): Promise<Goal> {
@@ -95,36 +135,33 @@ export function listOpportunities(filters: OpportunityFilters = {}): Promise<Opp
   return request<Opportunity[]>(`/api/opportunities${qs ? `?${qs}` : ""}`);
 }
 
-export function listSavedOpportunityIds(profileId: string): Promise<string[]> {
-  return request<string[]>(`/api/opportunities/saved?profile_id=${profileId}`);
+export function listSavedOpportunityIds(): Promise<string[]> {
+  return request<string[]>("/api/opportunities/saved");
 }
 
-export function saveOpportunity(opportunityId: string, profileId: string): Promise<unknown> {
-  return request(`/api/opportunities/${opportunityId}/save?profile_id=${profileId}`, {
-    method: "POST",
-  });
+export function saveOpportunity(opportunityId: string): Promise<unknown> {
+  return request(`/api/opportunities/${opportunityId}/save`, { method: "POST" });
 }
 
-export function unsaveOpportunity(opportunityId: string, profileId: string): Promise<unknown> {
-  return request(`/api/opportunities/${opportunityId}/save?profile_id=${profileId}`, {
-    method: "DELETE",
-  });
+export function unsaveOpportunity(opportunityId: string): Promise<unknown> {
+  return request(`/api/opportunities/${opportunityId}/save`, { method: "DELETE" });
 }
 
 // --- Applications ---
 
-export function listApplications(profileId: string): Promise<Application[]> {
-  return request<Application[]>(`/api/applications?profile_id=${profileId}`);
+export function listApplications(status?: string): Promise<Application[]> {
+  const qs = status ? `?status=${status}` : "";
+  return request<Application[]>(`/api/applications${qs}`);
 }
 
 export function createApplication(
-  profileId: string,
   opportunityId: string,
   status = "interested",
+  notes?: string,
 ): Promise<Application> {
   return request<Application>(
     "/api/applications",
-    jsonInit("POST", { profile_id: profileId, opportunity_id: opportunityId, status }),
+    jsonInit("POST", { opportunity_id: opportunityId, status, notes }),
   );
 }
 
@@ -137,16 +174,14 @@ export function updateApplication(
 
 // --- Dashboard ---
 
-export function getDashboard(profileId?: string): Promise<Dashboard> {
-  const qs = profileId ? `?profile_id=${profileId}` : "";
-  return request<Dashboard>(`/api/dashboard${qs}`);
+export function getDashboard(): Promise<Dashboard> {
+  return request<Dashboard>("/api/dashboard");
 }
 
 // --- Documents ---
 
-export function listDocuments(profileId?: string): Promise<DocumentItem[]> {
-  const qs = profileId ? `?profile_id=${profileId}` : "";
-  return request<DocumentItem[]>(`/api/documents${qs}`);
+export function listDocuments(): Promise<DocumentItem[]> {
+  return request<DocumentItem[]>("/api/documents");
 }
 
 export function uploadDocument(file: File, documentType: string): Promise<DocumentDetail> {
