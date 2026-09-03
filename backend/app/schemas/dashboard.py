@@ -20,12 +20,24 @@ class MilestoneProgress(BaseModel):
 class GoalSummary(BaseModel):
     id: uuid.UUID
     title: str
+    description: Optional[str] = None
+    target_date: Optional[date] = None
     status: str
     milestones_completed: int
     milestones_total: int
     tasks_completed: int
     tasks_total: int
     milestones: List[MilestoneProgress] = []
+
+
+class NextTask(BaseModel):
+    """The single most relevant task to do next (first incomplete roadmap task)."""
+    id: uuid.UUID
+    title: str
+    milestone_title: Optional[str] = None
+    rationale: Optional[str] = None
+    priority: str
+    due_date: Optional[date] = None
 
 
 class DeadlineItem(BaseModel):
@@ -54,7 +66,9 @@ class SavedOpportunityItem(BaseModel):
 
 
 class DashboardResponse(BaseModel):
+    profile_name: Optional[str] = None
     goal: Optional[GoalSummary] = None
+    next_task: Optional[NextTask] = None
     upcoming_deadlines: List[DeadlineItem] = []
     application_pipeline: ApplicationPipeline
     saved_opportunities: List[SavedOpportunityItem] = []

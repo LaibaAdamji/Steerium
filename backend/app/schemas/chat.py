@@ -5,7 +5,6 @@ from pydantic import BaseModel, Field
 
 
 class ChatRequest(BaseModel):
-    profile_id: Optional[uuid.UUID] = None  # defaults to the first (demo) profile
     question: str = Field(min_length=3, max_length=2000)
 
 

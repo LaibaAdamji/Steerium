@@ -17,6 +17,7 @@ from app.models.enums import ApplicationStatus, GoalStatus, OpportunityType
 from app.services import rag
 from app.services.ai_provider import AIProviderError
 from app.services.rag import answer_question, retrieve_chunks
+from tests.conftest import override_auth
 
 client = TestClient(app)
 
@@ -224,8 +225,8 @@ def test_chat_endpoint_happy_path():
     profile = make_profile()
     chunk, doc = make_chunk_and_doc()
     db, profile_q = make_rag_db(chunk, doc, keyword_rows=[(chunk, doc)])
-    profile_q.first.return_value = profile
     _override_db(db)
+    override_auth(profile)
 
     provider = FakeProvider(chat_answer="Grounded answer.")
     with patch.object(rag, "get_ai_provider", return_value=provider):
@@ -241,8 +242,8 @@ def test_chat_endpoint_happy_path():
 def test_chat_endpoint_502_on_provider_failure():
     profile = make_profile()
     db, profile_q = make_rag_db(None, None)
-    profile_q.first.return_value = profile
     _override_db(db)
+    override_auth(profile)
 
     provider = FakeProvider(chat_error=AIProviderError("model down"))
     with patch.object(rag, "get_ai_provider", return_value=provider):
@@ -252,15 +253,20 @@ def test_chat_endpoint_502_on_provider_failure():
     assert "Chat failed" in response.json()["detail"]
 
 
-def test_chat_endpoint_404_without_profile():
-    db, profile_q = make_rag_db(None, None)
-    profile_q.first.return_value = None
+def test_chat_endpoint_401_when_anonymous():
+    """No session and no auth override → protected endpoint rejects."""
+    db, _ = make_rag_db(None, None)
     _override_db(db)
 
     response = client.post("/api/chat", json={"question": "What should I do next?"})
-    assert response.status_code == 404
+    assert response.status_code == 401
 
 
 def test_chat_endpoint_validates_question_length():
+    """Auth resolves first; an authenticated user gets 422 for a short question."""
+    db, _ = make_rag_db(None, None)
+    _override_db(db)
+    override_auth(make_profile())
+
     response = client.post("/api/chat", json={"question": "hi"})
     assert response.status_code == 422
