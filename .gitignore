@@ -13,6 +13,9 @@ dist/
 # Local tooling (portable Node.js used during development)
 .tools/
 
+# Vercel CLI project link
+.vercel/
+
 # Environment
 .env
 .env.*
