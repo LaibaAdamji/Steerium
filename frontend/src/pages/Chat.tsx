@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { chat } from "../api/client";
+import { FileText, Send, Sparkles } from "lucide-react";
+import { chat, friendlyError } from "../api/client";
 import type { ChatMessage } from "../api/types";
-import { Button, Card, Chip, ErrorBanner, PageHeader } from "../components/ui";
+import { Button, ErrorBanner, PageHeader, SectionLabel } from "../components/ui";
 
 const SUGGESTIONS = [
   "What should I work on next?",
@@ -11,9 +12,9 @@ const SUGGESTIONS = [
 ];
 
 const MODE_LABELS: Record<string, string> = {
-  vector: "semantic",
-  keyword: "keyword",
-  none: "no docs",
+  vector: "semantic retrieval",
+  keyword: "keyword retrieval",
+  none: "general knowledge",
 };
 
 export default function ChatPage() {
@@ -47,7 +48,7 @@ export default function ChatPage() {
         },
       ]);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Chat failed");
+      setError(friendlyError(err));
     } finally {
       setBusy(false);
     }
@@ -56,29 +57,39 @@ export default function ChatPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col">
       <PageHeader
-        title="AI Assistant"
+        eyebrow="knowledge"
+        title="Steerium Intelligence"
         subtitle="Grounded in your profile, documents, goals, and saved opportunities"
+        actions={
+          <span className="flex h-9 w-9 items-center justify-center rounded-ai border border-eucalyptus/40 bg-eucalyptus/10">
+            <Sparkles size={16} className="text-eucalyptus" />
+          </span>
+        }
       />
 
       {error && <ErrorBanner message={error} />}
 
-      <Card className="flex min-h-[420px] flex-1 flex-col p-4">
+      <div className="flex min-h-[480px] flex-col rounded-card border border-hairline bg-card p-4">
         {/* Transcript */}
-        <div className="flex-1 space-y-4 overflow-y-auto p-2">
+        <div className="flex-1 space-y-5 overflow-y-auto p-2">
           {messages.length === 0 && (
-            <div className="flex flex-col items-center gap-4 py-12 text-center">
-              <span className="flex h-12 w-12 items-center justify-center rounded-ai border border-eucalyptus/40 bg-eucalyptus/10">
-                <span className="h-2.5 w-2.5 rounded-full bg-eucalyptus" />
+            <div className="flex flex-col items-center gap-5 py-14 text-center">
+              <span className="flex h-14 w-14 items-center justify-center rounded-ai border border-eucalyptus/40 bg-eucalyptus/10">
+                <Sparkles size={24} className="text-eucalyptus" />
               </span>
-              <p className="max-w-sm text-sm text-slate-ink">
-                Ask anything about your career plan. Answers cite the documents they rely on.
-              </p>
+              <div>
+                <p className="text-sm font-semibold text-navy">Ask anything about your career plan</p>
+                <p className="mt-1.5 max-w-sm text-sm leading-relaxed text-slate-ink/80">
+                  Answers cite the documents they rely on — and say so when they&rsquo;re
+                  reasoning from general knowledge instead.
+                </p>
+              </div>
               <div className="flex flex-wrap justify-center gap-2">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
                     onClick={() => ask(s)}
-                    className="rounded-full border border-hairline bg-canvas px-3 py-1.5 text-xs text-slate-ink transition-colors hover:border-sage hover:text-navy"
+                    className="rounded-full border border-hairline bg-canvas px-3.5 py-1.5 text-xs text-slate-ink transition-all duration-150 hover:-translate-y-px hover:border-sage hover:text-navy"
                   >
                     {s}
                   </button>
@@ -96,24 +107,31 @@ export default function ChatPage() {
               </div>
             ) : (
               <div key={i} className="flex justify-start">
-                <div className="max-w-[85%] rounded-ai rounded-bl-btn border border-eucalyptus/25 bg-eucalyptus/5 px-4 py-3">
-                  <p className="label-mono mb-1.5 text-[9px] text-eucalyptus">
-                    assistant
-                    {msg.retrievalMode && msg.retrievalMode in MODE_LABELS
-                      ? ` · ${MODE_LABELS[msg.retrievalMode]} retrieval`
-                      : ""}
-                  </p>
+                <div className="w-full max-w-[92%] rounded-ai rounded-bl-btn border border-eucalyptus/25 bg-eucalyptus/5 px-4 py-3.5">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Sparkles size={11} className="text-eucalyptus" />
+                    <p className="label-mono text-[9px] text-eucalyptus">
+                      answer
+                      {msg.retrievalMode && msg.retrievalMode in MODE_LABELS
+                        ? ` · ${MODE_LABELS[msg.retrievalMode]}`
+                        : ""}
+                    </p>
+                  </div>
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-navy-deep">
                     {msg.content}
                   </p>
+
                   {msg.citations && msg.citations.length > 0 && (
-                    <div className="mt-3 border-t border-eucalyptus/20 pt-2">
-                      <p className="label-mono mb-1.5 text-[9px] text-slate-ink/60">sources</p>
-                      <div className="space-y-1.5">
+                    <div className="mt-4 border-t border-eucalyptus/20 pt-3">
+                      <div className="mb-2 flex items-center gap-2">
+                        <FileText size={11} className="text-slate-ink/60" />
+                        <p className="label-mono text-[9px] text-slate-ink/60">context used</p>
+                      </div>
+                      <div className="space-y-2">
                         {msg.citations.map((c) => (
                           <div
                             key={`${c.document_id}-${c.chunk_index}`}
-                            className="rounded-btn bg-card px-2.5 py-1.5"
+                            className="rounded-btn border border-hairline bg-card px-3 py-2"
                           >
                             <p className="font-mono text-[10px] text-slate-ink">
                               {c.filename} · chunk {c.chunk_index}
@@ -121,7 +139,7 @@ export default function ChatPage() {
                                 ? ` · ${(c.score * 100).toFixed(0)}% match`
                                 : ""}
                             </p>
-                            <p className="mt-0.5 line-clamp-2 text-xs leading-snug text-slate-ink/70">
+                            <p className="mt-1 line-clamp-2 text-xs leading-snug text-slate-ink/70">
                               {c.snippet}
                             </p>
                           </div>
@@ -135,9 +153,13 @@ export default function ChatPage() {
           )}
 
           {busy && (
-            <div className="flex items-center gap-2 px-1 text-slate-ink">
-              <span className="h-3 w-3 animate-pulse rounded-full bg-eucalyptus" />
-              <span className="label-mono text-[10px]">thinking…</span>
+            <div className="flex items-center gap-2 px-1 text-eucalyptus">
+              <span className="flex gap-1">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-eucalyptus [animation-delay:0ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-eucalyptus [animation-delay:150ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-eucalyptus [animation-delay:300ms]" />
+              </span>
+              <span className="label-mono text-[10px]">thinking</span>
             </div>
           )}
           <div ref={endRef} />
@@ -158,15 +180,19 @@ export default function ChatPage() {
             disabled={busy}
             className="input-focus flex-1 rounded-btn border border-hairline bg-card px-3 py-2.5 text-sm"
           />
-          <Button type="submit" disabled={busy || !input.trim()}>
+          <Button type="submit" disabled={busy || !input.trim()} aria-label="Send question">
+            <Send size={15} />
             Ask
           </Button>
         </form>
-      </Card>
+      </div>
 
-      <p className="mt-3 text-center text-xs text-slate-ink/60">
-        <Chip>rag</Chip> answers distinguish known context from assumptions
-      </p>
+      <div className="mt-3 flex items-center justify-center gap-2">
+        <SectionLabel>rag</SectionLabel>
+        <p className="text-xs text-slate-ink/60">
+          answers distinguish known context from assumptions
+        </p>
+      </div>
     </div>
   );
 }

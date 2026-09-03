@@ -12,6 +12,7 @@ from app.core.config import settings  # noqa: E402
 from app.core.database import Base  # noqa: E402
 from app.models import (  # noqa: E402, F401
     Profile,
+    User,
     Goal,
     RoadmapItem,
     Opportunity,

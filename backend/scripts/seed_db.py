@@ -9,8 +9,10 @@ Idempotent: safe to run multiple times. Run from backend/:
 import json
 from pathlib import Path
 
+from app.core.config import settings
 from app.core.database import SessionLocal
-from app.models import Goal, Opportunity, Profile, RoadmapItem
+from app.core.security import hash_password
+from app.models import Goal, Opportunity, Profile, RoadmapItem, User
 from app.models.enums import GoalStatus, Priority, RoadmapItemType
 
 DATA_FILE = Path(__file__).resolve().parents[2] / "data" / "opportunities.json"
@@ -49,12 +51,24 @@ def seed_opportunities(db):
 
 
 def seed_demo_profile(db) -> Profile:
-    profile = db.query(Profile).filter(Profile.name == DEMO_PROFILE_NAME).first()
+    """Demo profile, linked to the demo login account (created if missing)."""
+    demo_user = seed_demo_user(db)
+
+    profile = db.query(Profile).filter(Profile.user_id == demo_user.id).first()
     if profile:
         print("Demo profile already exists, reusing it.")
         return profile
 
+    # Legacy single-tenant DB: adopt the orphaned demo profile if present
+    profile = db.query(Profile).filter(Profile.name == DEMO_PROFILE_NAME).first()
+    if profile:
+        profile.user_id = demo_user.id
+        db.commit()
+        print(f"Linked existing demo profile to demo user ({demo_user.email}).")
+        return profile
+
     profile = Profile(
+        user_id=demo_user.id,
         name=DEMO_PROFILE_NAME,
         education={
             "degree": "BS Computer Science (in progress)",
@@ -79,6 +93,20 @@ def seed_demo_profile(db) -> Profile:
     db.refresh(profile)
     print(f"Created demo profile: {profile.name} ({profile.id})")
     return profile
+
+
+def seed_demo_user(db) -> User:
+    """Demo login account so judges can sign in without signing up."""
+    email = settings.DEMO_EMAIL.lower()
+    user = db.query(User).filter(User.email == email).first()
+    if user:
+        return user
+    user = User(email=email, password_hash=hash_password(settings.DEMO_PASSWORD), name=DEMO_PROFILE_NAME)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    print(f"Created demo user: {user.email} (password from DEMO_PASSWORD env)")
+    return user
 
 
 def seed_demo_goal_and_roadmap(db, profile: Profile):

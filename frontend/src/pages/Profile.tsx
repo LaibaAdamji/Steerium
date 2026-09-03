@@ -1,98 +1,225 @@
 import { useEffect, useState } from "react";
-import { getProfile, updateProfile } from "../api/client";
-import type { Profile } from "../api/types";
+import { Briefcase, GraduationCap, Plus, Trash2, User, X } from "lucide-react";
+import { friendlyError, getProfile, updateProfile } from "../api/client";
+import type { ExperienceItem, Profile as ProfileType } from "../api/types";
+import { useAuth } from "../auth/AuthContext";
+import ChipInput from "../components/ChipInput";
+import { useToast } from "../components/Toast";
 import {
   Button,
   Card,
   Chip,
   ErrorBanner,
+  Field,
+  Input,
   PageHeader,
-  Spinner,
+  Skeleton,
+  SkeletonCard,
+  Textarea,
 } from "../components/ui";
 
+function SectionCard({
+  label,
+  icon,
+  children,
+}: {
+  label: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <Card className="p-6">
+      <div className="mb-4 flex items-center gap-2 text-slate-ink">
+        {icon}
+        <p className="label-mono text-[10px]">{label}</p>
+      </div>
+      {children}
+    </Card>
+  );
+}
+
+function ExperienceEditor({
+  entries,
+  onChange,
+}: {
+  entries: ExperienceItem[];
+  onChange: (entries: ExperienceItem[]) => void;
+}) {
+  function update(i: number, patch: Partial<ExperienceItem>) {
+    onChange(entries.map((e, idx) => (idx === i ? { ...e, ...patch } : e)));
+  }
+
+  return (
+    <div className="space-y-4">
+      {entries.map((exp, i) => (
+        <div key={i} className="rounded-btn border border-hairline bg-canvas p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="label-mono text-[10px] text-slate-ink/60">entry {i + 1}</p>
+            <button
+              type="button"
+              onClick={() => onChange(entries.filter((_, idx) => idx !== i))}
+              aria-label={`Remove experience entry ${i + 1}`}
+              className="rounded-btn p-1 text-slate-ink/60 transition-colors hover:bg-error/10 hover:text-error"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Title">
+              <Input
+                value={exp.title ?? ""}
+                onChange={(e) => update(i, { title: e.target.value })}
+                placeholder="Software Engineering Intern"
+              />
+            </Field>
+            <Field label="Organization">
+              <Input
+                value={exp.org ?? ""}
+                onChange={(e) => update(i, { org: e.target.value })}
+                placeholder="Acme Labs"
+              />
+            </Field>
+          </div>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_2fr]">
+            <Field label="Dates">
+              <Input
+                value={exp.dates ?? ""}
+                onChange={(e) => update(i, { dates: e.target.value })}
+                placeholder="Summer 2026"
+              />
+            </Field>
+            <Field label="What you did">
+              <Input
+                value={exp.description ?? ""}
+                onChange={(e) => update(i, { description: e.target.value })}
+                placeholder="Built and shipped internal tooling…"
+              />
+            </Field>
+          </div>
+        </div>
+      ))}
+      <Button
+        variant="secondary"
+        onClick={() => onChange([...entries, { title: "", org: "", dates: "", description: "" }])}
+      >
+        <Plus size={14} />
+        Add experience
+      </Button>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const { setProfile } = useAuth();
+  const { toast } = useToast();
+
+  const [profile, setProfileState] = useState<ProfileType | null>(null);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [saved, setSaved] = useState(false);
 
-  // Editable form fields (comma-separated for list inputs)
+  // Editable form state
   const [name, setName] = useState("");
-  const [degree, setDegree] = useState("");
   const [institution, setInstitution] = useState("");
+  const [degree, setDegree] = useState("");
   const [year, setYear] = useState("");
-  const [skillsText, setSkillsText] = useState("");
-  const [interestsText, setInterestsText] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [interests, setInterests] = useState<string[]>([]);
+  const [experience, setExperience] = useState<ExperienceItem[]>([]);
   const [goals, setGoals] = useState("");
 
   useEffect(() => {
     getProfile()
       .then((p) => {
-        setProfile(p);
-        setName(p.name ?? "");
-        setDegree(p.education?.degree ?? "");
-        setInstitution(p.education?.institution ?? "");
-        setYear(p.education?.year ?? "");
-        setSkillsText((p.skills ?? []).join(", "));
-        setInterestsText((p.interests ?? []).join(", "));
-        setGoals(p.career_goals ?? "");
+        setProfileState(p);
+        hydrate(p);
       })
-      .catch((err: Error) => setError(err.message));
+      .catch((err) => setError(friendlyError(err)));
   }, []);
 
+  function hydrate(p: ProfileType) {
+    setName(p.name ?? "");
+    setInstitution(p.education?.institution ?? "");
+    setDegree(p.education?.degree ?? "");
+    setYear(p.education?.year ?? "");
+    setSkills(p.skills ?? []);
+    setInterests(p.interests ?? []);
+    setExperience(p.experience ?? []);
+    setGoals(p.career_goals ?? "");
+  }
+
   const save = async () => {
-    if (!profile) return;
+    if (!profile || saving) return;
+    if (!name.trim()) {
+      setError("Your name can't be empty.");
+      return;
+    }
     setSaving(true);
     setError("");
-    setSaved(false);
     try {
+      const education: Record<string, string> = {};
+      if (institution.trim()) education.institution = institution.trim();
+      if (degree.trim()) education.degree = degree.trim();
+      if (year.trim()) education.year = year.trim();
+
       const updated = await updateProfile({
-        name: name.trim() || profile.name,
-        education: {
-          degree: degree.trim(),
-          institution: institution.trim(),
-          year: year.trim(),
-        },
-        skills: skillsText
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        interests: interestsText
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
+        name: name.trim(),
+        education,
+        skills,
+        interests,
+        experience: experience.filter((e) => (e.title ?? "").trim() || (e.org ?? "").trim()),
         career_goals: goals.trim() || null,
       });
-      setProfile(updated);
+      setProfileState(updated);
+      setProfile(updated); // keep the auth context in sync
       setEditing(false);
-      setSaved(true);
+      toast("Profile saved.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save profile");
+      setError(friendlyError(err));
     } finally {
       setSaving(false);
     }
   };
 
   if (error && !profile) return <ErrorBanner message={error} />;
-  if (!profile) return <Spinner label="Loading profile" />;
+  if (!profile)
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-9 w-2/5" />
+        </div>
+        <SkeletonCard />
+        <SkeletonCard />
+      </div>
+    );
 
   const education = profile.education ?? {};
-  const experience = profile.experience ?? [];
+  const experienceList = profile.experience ?? [];
 
   return (
     <div className="mx-auto max-w-3xl">
       <PageHeader
+        eyebrow="settings"
         title="Career Profile"
         subtitle="The context Steerium uses to personalize everything"
         actions={
           editing ? (
             <>
-              <Button variant="secondary" onClick={() => setEditing(false)} disabled={saving}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  hydrate(profile);
+                  setEditing(false);
+                  setError("");
+                }}
+                disabled={saving}
+              >
+                <X size={14} />
                 Cancel
               </Button>
-              <Button onClick={save} disabled={saving}>
-                {saving ? "Saving…" : "Save changes"}
+              <Button onClick={save} loading={saving}>
+                Save changes
               </Button>
             </>
           ) : (
@@ -104,96 +231,83 @@ export default function ProfilePage() {
       />
 
       {error && <ErrorBanner message={error} />}
-      {saved && (
-        <div className="mb-6 rounded-ai border border-sage/40 bg-sage/10 px-4 py-3 text-sm text-sage-dim">
-          Profile updated.
-        </div>
-      )}
 
       {editing ? (
-        <Card className="space-y-5 p-6">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="label-mono mb-1.5 block text-slate-ink">name</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="input-focus w-full rounded-btn border border-hairline bg-card px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block">
-              <span className="label-mono mb-1.5 block text-slate-ink">expected year</span>
-              <input
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                placeholder="e.g. Expected 2028"
-                className="input-focus w-full rounded-btn border border-hairline bg-card px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block">
-              <span className="label-mono mb-1.5 block text-slate-ink">degree</span>
-              <input
-                value={degree}
-                onChange={(e) => setDegree(e.target.value)}
-                className="input-focus w-full rounded-btn border border-hairline bg-card px-3 py-2 text-sm"
-              />
-            </label>
-            <label className="block">
-              <span className="label-mono mb-1.5 block text-slate-ink">institution</span>
-              <input
-                value={institution}
-                onChange={(e) => setInstitution(e.target.value)}
-                className="input-focus w-full rounded-btn border border-hairline bg-card px-3 py-2 text-sm"
-              />
-            </label>
-          </div>
+        <div className="space-y-6">
+          <SectionCard label="personal" icon={<User size={14} />}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Full name">
+                <Input value={name} onChange={(e) => setName(e.target.value)} />
+              </Field>
+              <Field label="Expected graduation" hint="e.g. Expected 2028">
+                <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="Expected 2028" />
+              </Field>
+            </div>
+          </SectionCard>
 
-          <label className="block">
-            <span className="label-mono mb-1.5 block text-slate-ink">skills (comma-separated)</span>
-            <textarea
-              value={skillsText}
-              onChange={(e) => setSkillsText(e.target.value)}
-              rows={2}
-              className="input-focus w-full rounded-btn border border-hairline bg-card px-3 py-2 text-sm"
-            />
-          </label>
+          <SectionCard label="education" icon={<GraduationCap size={14} />}>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Institution">
+                <Input
+                  value={institution}
+                  onChange={(e) => setInstitution(e.target.value)}
+                  placeholder="FAST-NUCES"
+                />
+              </Field>
+              <Field label="Degree">
+                <Input
+                  value={degree}
+                  onChange={(e) => setDegree(e.target.value)}
+                  placeholder="BS Computer Science"
+                />
+              </Field>
+            </div>
+          </SectionCard>
 
-          <label className="block">
-            <span className="label-mono mb-1.5 block text-slate-ink">
-              interests (comma-separated)
-            </span>
-            <textarea
-              value={interestsText}
-              onChange={(e) => setInterestsText(e.target.value)}
-              rows={2}
-              className="input-focus w-full rounded-btn border border-hairline bg-card px-3 py-2 text-sm"
+          <SectionCard label="skills">
+            <ChipInput
+              values={skills}
+              onChange={setSkills}
+              placeholder="Python, Figma, SQL…"
+              suggestions={["Python", "SQL", "Figma", "React", "Excel", "Data analysis"]}
             />
-          </label>
+          </SectionCard>
 
-          <label className="block">
-            <span className="label-mono mb-1.5 block text-slate-ink">career goals</span>
-            <textarea
-              value={goals}
-              onChange={(e) => setGoals(e.target.value)}
-              rows={3}
-              className="input-focus w-full rounded-btn border border-hairline bg-card px-3 py-2 text-sm"
+          <SectionCard label="experience" icon={<Briefcase size={14} />}>
+            <ExperienceEditor entries={experience} onChange={setExperience} />
+          </SectionCard>
+
+          <SectionCard label="interests">
+            <ChipInput
+              values={interests}
+              onChange={setInterests}
+              placeholder="AI, design, research…"
+              suggestions={["AI", "Design", "Finance", "Research", "Sustainability"]}
             />
-          </label>
-        </Card>
+          </SectionCard>
+
+          <SectionCard label="career direction">
+            <Field label="Where are you headed?" hint="This steers roadmaps, matches, and AI guidance.">
+              <Textarea
+                value={goals}
+                onChange={(e) => setGoals(e.target.value)}
+                rows={3}
+                placeholder="Pursue a funded Master's in CS abroad, specializing in AI/ML…"
+              />
+            </Field>
+          </SectionCard>
+        </div>
       ) : (
         <div className="space-y-6">
-          <Card className="p-6">
-            <p className="label-mono mb-3 text-slate-ink">education</p>
+          <SectionCard label="personal" icon={<User size={14} />}>
             <p className="text-base font-semibold text-navy">{profile.name}</p>
             <p className="mt-1 text-sm text-slate-ink">
-              {[education.degree, education.institution, education.year]
-                .filter(Boolean)
-                .join(" · ") || "—"}
+              {[education.degree, education.institution, education.year].filter(Boolean).join(" · ") ||
+                "Add your education to unlock better matches."}
             </p>
-          </Card>
+          </SectionCard>
 
-          <Card className="p-6">
-            <p className="label-mono mb-3 text-slate-ink">skills</p>
+          <SectionCard label="skills">
             <div className="flex flex-wrap gap-2">
               {(profile.skills ?? []).map((s) => (
                 <Chip key={s}>{s}</Chip>
@@ -202,15 +316,14 @@ export default function ProfilePage() {
                 <span className="text-sm text-slate-ink/70">—</span>
               )}
             </div>
-          </Card>
+          </SectionCard>
 
-          <Card className="p-6">
-            <p className="label-mono mb-3 text-slate-ink">experience</p>
-            {experience.length === 0 ? (
+          <SectionCard label="experience" icon={<Briefcase size={14} />}>
+            {experienceList.length === 0 ? (
               <span className="text-sm text-slate-ink/70">—</span>
             ) : (
               <ul className="space-y-4">
-                {experience.map((exp, i) => (
+                {experienceList.map((exp, i) => (
                   <li key={i}>
                     <p className="text-sm font-medium text-navy">
                       {exp.title ?? "Role"}
@@ -220,16 +333,15 @@ export default function ProfilePage() {
                       <p className="label-mono mt-0.5 text-[10px] text-slate-ink/60">{exp.dates}</p>
                     )}
                     {exp.description && (
-                      <p className="mt-1 text-sm text-slate-ink">{exp.description}</p>
+                      <p className="mt-1 text-sm leading-relaxed text-slate-ink">{exp.description}</p>
                     )}
                   </li>
                 ))}
               </ul>
             )}
-          </Card>
+          </SectionCard>
 
-          <Card className="p-6">
-            <p className="label-mono mb-3 text-slate-ink">interests</p>
+          <SectionCard label="interests">
             <div className="flex flex-wrap gap-2">
               {(profile.interests ?? []).map((s) => (
                 <Chip key={s}>{s}</Chip>
@@ -238,14 +350,11 @@ export default function ProfilePage() {
                 <span className="text-sm text-slate-ink/70">—</span>
               )}
             </div>
-          </Card>
+          </SectionCard>
 
-          <Card className="p-6">
-            <p className="label-mono mb-3 text-slate-ink">career goals</p>
-            <p className="text-sm leading-relaxed text-slate-ink">
-              {profile.career_goals ?? "—"}
-            </p>
-          </Card>
+          <SectionCard label="career direction">
+            <p className="text-sm leading-relaxed text-slate-ink">{profile.career_goals ?? "—"}</p>
+          </SectionCard>
         </div>
       )}
     </div>
