@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
-from app.api import health, profile, goals, opportunities, applications, dashboard
+from app.api import health, profile, goals, opportunities, applications, dashboard, documents, chat
 
 app = FastAPI(title=settings.APP_NAME)
 
@@ -20,7 +20,9 @@ app.include_router(profile.router)
 app.include_router(goals.router)
 app.include_router(opportunities.router)
 app.include_router(applications.router)
+app.include_router(documents.router)
 app.include_router(dashboard.router)
+app.include_router(chat.router)
 
 
 @app.get("/")
