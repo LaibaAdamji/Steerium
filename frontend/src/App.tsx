@@ -11,7 +11,6 @@ import ChatPage from "./pages/Chat";
 import ProfilePage from "./pages/Profile";
 import LoginPage from "./pages/Login";
 import SignupPage from "./pages/Signup";
-import OnboardingPage from "./pages/Onboarding";
 
 export default function App() {
   return (
@@ -36,9 +35,6 @@ export default function App() {
 
       {/* Authenticated app */}
       <Route element={<ProtectedRoute />}>
-        {/* Focused setup flow — outside the app shell */}
-        <Route path="/onboarding" element={<OnboardingPage />} />
-
         <Route element={<Layout />}>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/goals" element={<GoalsPage />} />

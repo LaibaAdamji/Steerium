@@ -41,7 +41,9 @@ export default function SignupPage() {
     setSubmitting(true);
     try {
       await signup({ name: name.trim(), email: email.trim(), password });
-      navigate("/onboarding", { replace: true });
+      // Land in the workspace — the profile setup popup opens over it
+      // (Layout reads this navigation state).
+      navigate("/", { replace: true, state: { profileSetup: true } });
     } catch (err) {
       setError(friendlyError(err));
     } finally {
