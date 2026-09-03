@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   ClipboardList,
   Compass,
@@ -10,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "../auth/AuthContext";
+import ProfileSetupModal from "./ProfileSetupModal";
 import { useToast } from "./Toast";
 import { Avatar } from "./ui";
 
@@ -61,7 +63,18 @@ function SidebarLink({ to, label, icon: Icon, end }: { to: string; label: string
 export default function Layout() {
   const { user, profile, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const [setupOpen, setSetupOpen] = useState(false);
+
+  // Post-signup gate: Signup navigates here with profileSetup state. Open the
+  // completion popup, then strip the state so refresh/back doesn't re-open it.
+  useEffect(() => {
+    if ((location.state as { profileSetup?: boolean } | null)?.profileSetup) {
+      setSetupOpen(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const displayName = profile?.name || user?.name || "You";
 
@@ -196,6 +209,9 @@ export default function Layout() {
           ))}
         </nav>
       </div>
+
+      {/* Post-signup profile completion popup */}
+      {setupOpen && <ProfileSetupModal onClose={() => setSetupOpen(false)} />}
     </div>
   );
 }
