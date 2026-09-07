@@ -35,6 +35,32 @@ body {
   @apply bg-canvas text-navy-deep font-sans antialiased;
 }
 
+/* Sage-tinted text selection */
+::selection {
+  background: color-mix(in srgb, var(--color-sage) 40%, transparent);
+  color: var(--color-navy);
+}
+
+/* Slim, quiet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d3d9e0 transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d3d9e0;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b6c0cb;
+}
+
 /* Uppercase mono label — used for metadata, status, section headers */
 .label-mono {
   @apply font-mono text-xs font-medium uppercase tracking-widest;
@@ -45,9 +71,21 @@ body {
   font-family: var(--font-display);
 }
 
-/* Single "Soft Focus" shadow reserved for floating/active elements */
+/* ─── Shadow system ─────────────────────────────────────────────────────
+   Three depths: ambient rest, hover lift, floating/active. Navy-tinted,
+   layered (never a single hard blur) for a quieter, premium feel. */
 .shadow-focus {
-  box-shadow: 0px 4px 12px rgba(1, 25, 54, 0.05);
+  box-shadow: 0 1px 2px rgba(1, 25, 54, 0.04), 0 4px 12px rgba(1, 25, 54, 0.05);
+}
+.shadow-lift {
+  box-shadow:
+    0 2px 4px rgba(1, 25, 54, 0.04),
+    0 12px 28px -10px rgba(1, 25, 54, 0.18);
+}
+.shadow-pop {
+  box-shadow:
+    0 4px 8px rgba(1, 25, 54, 0.06),
+    0 20px 44px -12px rgba(1, 25, 54, 0.28);
 }
 
 /* Focus ring: sage border + soft glow (per design spec for inputs) */
@@ -55,15 +93,62 @@ body {
   @apply focus:border-sage focus:outline-none focus:ring-2 focus:ring-sage/30;
 }
 
-/* Skeleton shimmer for loading states */
+/* Keyboard focus — visible sage ring on interactive primitives */
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50 focus-visible:ring-offset-1;
+}
+
+/* ─── Keyframes ─────────────────────────────────────────────────────────── */
 @keyframes steerium-shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-.skeleton {
-  background: linear-gradient(90deg, #f3f4f6 25%, #e9ebee 50%, #f3f4f6 75%);
-  background-size: 200% 100%;
-  animation: steerium-shimmer 1.4s ease-in-out infinite;
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Primary entrance: rise + settle. Used everywhere content appears. */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Toasts arrive from the edge they're pinned to. */
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(24px) scale(0.97); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+/* Dialog entrance with a gentle overshoot. */
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Checkbox / completion bounce. */
+@keyframes pop {
+  0% { transform: scale(0.72); }
+  60% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+
+/* Slow ambient drift for hero/brand orbs — never draws attention. */
+@keyframes aurora {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33% { transform: translate3d(26px, -18px, 0) scale(1.07); }
+  66% { transform: translate3d(-20px, 14px, 0) scale(0.95); }
+}
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+/* Moving highlight for progress fills. */
+@keyframes sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(240%); }
 }
 
 /* Milestone/timeline connector */
@@ -71,14 +156,72 @@ body {
   from { width: 0%; }
 }
 
-/* Modal enter transitions */
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* ─── Named animation utilities ───────────────────────────────────────────
+   fill-mode "both" keeps elements hidden through any stagger delay. */
+.animate-fade {
+  animation: fade-in 200ms ease-out both;
 }
-@keyframes modal-in {
-  from { opacity: 0; transform: translateY(8px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+.animate-fade-up {
+  animation: fade-up 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-modal {
+  animation: modal-in 300ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+.animate-toast {
+  animation: slide-in-right 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-pop {
+  animation: pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.animate-aurora {
+  animation: aurora 16s ease-in-out infinite;
+}
+.animate-aurora-rev {
+  animation: aurora 22s ease-in-out infinite reverse;
+}
+.animate-spin-slower {
+  animation: spin-slow 90s linear infinite;
+}
+
+/* ─── Hero surfaces ─────────────────────────────────────────────────────── */
+
+/* Faint blueprint grid over navy panels. */
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Sage→moss gradient text for the accent phrase in display headings. */
+.text-gradient-sage {
+  background: linear-gradient(100deg, var(--color-sage) 20%, var(--color-moss) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ─── Progress / loading ────────────────────────────────────────────────── */
+
+/* Skeleton shimmer for loading states */
+.skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e9ebee 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: steerium-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Repeating highlight sweeping across a filled progress bar. */
+.progress-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.progress-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 45%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  animation: sheen 2.6s ease-in-out infinite;
 }
 
 /* Respect users who prefer reduced motion — kill all custom animation */

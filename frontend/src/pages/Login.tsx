@@ -102,9 +102,9 @@ export default function LoginPage() {
           setPassword(DEMO_PASSWORD);
           setError("");
         }}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-btn border border-dashed border-hairline px-4 py-2.5 text-xs text-slate-ink transition-colors hover:border-sage hover:text-sage-dim"
+        className="focus-ring mt-4 flex w-full items-center justify-center gap-2 rounded-btn border border-dashed border-hairline px-4 py-2.5 text-xs text-slate-ink transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-sage hover:text-sage-dim hover:shadow-focus active:translate-y-0"
       >
-        <Sparkles size={13} />
+        <Sparkles size={13} className="transition-transform duration-300 hover:rotate-12" />
         Fill demo account — explore a seeded workspace
       </button>
 
