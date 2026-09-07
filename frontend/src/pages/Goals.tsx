@@ -13,6 +13,7 @@ import {
   Input,
   Modal,
   PageHeader,
+  Reveal,
   SkeletonCard,
   StatusBadge,
   Textarea,
@@ -108,32 +109,34 @@ export default function GoalsPage() {
         />
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
-          {goals.map((goal) => (
-            <Card key={goal.id} interactive className="flex flex-col p-5">
-              <Link to={`/goals/${goal.id}`} className="flex h-full flex-col">
-                <div className="flex items-start justify-between gap-3">
-                  <h3 className="font-display text-lg font-semibold tracking-tight text-navy">
-                    {goal.title}
-                  </h3>
-                  <StatusBadge status={goal.status} />
-                </div>
-                {goal.description && (
-                  <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-ink">
-                    {goal.description}
-                  </p>
-                )}
-                <div className="mt-auto flex items-center justify-between pt-4">
-                  <div className="flex items-center gap-3 font-mono text-[10px] text-slate-ink/60">
-                    {goal.target_date && <span>target {formatDate(goal.target_date)}</span>}
-                    <span>created {formatDate(goal.created_at)}</span>
+          {goals.map((goal, i) => (
+            <Reveal key={goal.id} delay={Math.min(i * 70, 420)} className="h-full">
+              <Card interactive className="group flex h-full flex-col p-5">
+                <Link to={`/goals/${goal.id}`} className="flex h-full flex-col">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-display text-lg font-semibold tracking-tight text-navy">
+                      {goal.title}
+                    </h3>
+                    <StatusBadge status={goal.status} />
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-sage-dim">
-                    Open
-                    <ArrowRight size={12} />
-                  </span>
-                </div>
-              </Link>
-            </Card>
+                  {goal.description && (
+                    <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-slate-ink">
+                      {goal.description}
+                    </p>
+                  )}
+                  <div className="mt-auto flex items-center justify-between pt-4">
+                    <div className="flex items-center gap-3 font-mono text-[10px] text-slate-ink/60">
+                      {goal.target_date && <span>target {formatDate(goal.target_date)}</span>}
+                      <span>created {formatDate(goal.created_at)}</span>
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-sage-dim transition-transform duration-200 group-hover:translate-x-0.5">
+                      Open
+                      <ArrowRight size={12} />
+                    </span>
+                  </div>
+                </Link>
+              </Card>
+            </Reveal>
           ))}
         </div>
       )}

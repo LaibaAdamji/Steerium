@@ -19,6 +19,7 @@ import {
   EmptyState,
   ErrorBanner,
   PageHeader,
+  Reveal,
   SkeletonCard,
   daysUntil,
   formatDate,
@@ -257,12 +258,13 @@ export default function OpportunitiesPage() {
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          {ranked.map((opp) => {
+          {ranked.map((opp, i) => {
             const days = daysUntil(opp.deadline);
             const saved = savedIds.has(opp.id);
             const match = matchProfile(opp, profile);
             return (
-              <Card key={opp.id} className="flex flex-col p-5">
+              <Reveal key={opp.id} delay={Math.min(i * 55, 440)} className="h-full">
+                <Card className="flex h-full flex-col p-5 transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-sage/50 hover:shadow-focus">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
@@ -350,7 +352,8 @@ export default function OpportunitiesPage() {
                     )}
                   </div>
                 )}
-              </Card>
+                </Card>
+              </Reveal>
             );
           })}
         </div>
