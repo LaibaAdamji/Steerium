@@ -38,9 +38,9 @@ function SidebarLink({ to, label, icon: Icon, end }: { to: string; label: string
       to={to}
       end={end}
       className={({ isActive }) =>
-        `relative flex items-center gap-3 rounded-btn px-3 py-2 text-sm font-medium transition-all duration-150 ${
+        `group relative flex items-center gap-3 rounded-btn px-3 py-2 text-sm font-medium transition-all duration-200 ${
           isActive
-            ? "bg-white/10 text-sage"
+            ? "bg-sage/15 text-sage"
             : "text-white/65 hover:bg-white/5 hover:text-white"
         }`
       }
@@ -48,11 +48,16 @@ function SidebarLink({ to, label, icon: Icon, end }: { to: string; label: string
       {({ isActive }) => (
         <>
           <span
-            className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-sage transition-opacity duration-200 ${
-              isActive ? "opacity-100" : "opacity-0"
+            className={`absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-sage transition-all duration-200 ${
+              isActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0"
             }`}
           />
-          <Icon size={16} className="shrink-0" />
+          <Icon
+            size={16}
+            className={`shrink-0 transition-transform duration-200 ${
+              isActive ? "scale-110" : "group-hover:scale-110"
+            }`}
+          />
           {label}
         </>
       )}
@@ -87,10 +92,16 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar — the navy "OS chrome" */}
-      <aside className="hidden w-64 shrink-0 flex-col bg-navy md:flex">
-        <div className="flex items-center gap-3 px-6 pb-6 pt-7">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-sage/60">
-            <Compass size={17} className="text-sage" />
+      <aside className="relative hidden w-64 shrink-0 flex-col overflow-hidden bg-navy md:flex">
+        {/* Ambient sage glow bleeding in from the top */}
+        <div className="pointer-events-none absolute -top-36 left-1/2 h-72 w-[160%] -translate-x-1/2 rounded-full bg-sage/[0.07] blur-3xl" />
+
+        <div className="group relative flex items-center gap-3 px-6 pb-6 pt-7">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-sage/60 transition-colors duration-300 group-hover:border-sage">
+            <Compass
+              size={17}
+              className="text-sage transition-transform duration-700 ease-out group-hover:rotate-[100deg]"
+            />
           </span>
           <div>
             <p className="text-lg font-semibold leading-tight text-white">Steerium</p>
@@ -118,8 +129,8 @@ export default function Layout() {
         </nav>
 
         {/* User card + sign out */}
-        <div className="border-t border-white/10 p-3">
-          <div className="flex items-center gap-3 rounded-btn px-3 py-2.5">
+        <div className="relative border-t border-white/10 p-3">
+          <div className="flex items-center gap-3 rounded-btn px-3 py-2.5 transition-colors duration-200 hover:bg-white/5">
             <NavLink to="/profile" className="flex min-w-0 flex-1 items-center gap-3" title="Profile settings">
               <Avatar name={displayName} size="md" />
               <span className="min-w-0 flex-1 text-left">
@@ -133,7 +144,7 @@ export default function Layout() {
               onClick={handleLogout}
               aria-label="Sign out"
               title="Sign out"
-              className="rounded-btn p-1.5 text-white/50 transition-colors hover:bg-white/10 hover:text-white"
+              className="rounded-btn p-1.5 text-white/50 transition-all duration-200 hover:rotate-12 hover:bg-white/10 hover:text-white"
             >
               <LogOut size={15} />
             </button>
@@ -169,13 +180,16 @@ export default function Layout() {
           </div>
         </header>
 
+        {/* Page content — keyed by path so every navigation plays the entrance */}
         <main className="mx-auto w-full max-w-[1280px] flex-1 px-4 pb-24 pt-6 md:px-10 md:pb-10 md:pt-8">
-          <Outlet />
+          <div key={location.pathname} className="animate-fade-up">
+            <Outlet />
+          </div>
         </main>
 
         {/* Mobile bottom nav */}
         <nav
-          className="fixed inset-x-0 bottom-0 z-30 flex border-t border-hairline bg-card md:hidden"
+          className="fixed inset-x-0 bottom-0 z-30 flex border-t border-hairline bg-card/95 backdrop-blur-sm md:hidden"
           aria-label="Primary"
         >
           {MOBILE_NAV.map((item) => (
@@ -183,24 +197,28 @@ export default function Layout() {
               key={item.to}
               to={item.to}
               end={item.end}
-              className="flex flex-1 flex-col items-center gap-1 py-2.5"
+              className="group flex flex-1 flex-col items-center gap-1 py-2.5"
             >
               {({ isActive }) => (
                 <>
                   <item.icon
                     size={19}
-                    className={isActive ? "text-sage-dim" : "text-slate-ink/60"}
+                    className={`transition-all duration-200 ${
+                      isActive
+                        ? "-translate-y-0.5 scale-110 text-sage-dim"
+                        : "text-slate-ink/60 group-hover:scale-105"
+                    }`}
                   />
                   <span
-                    className={`text-[10px] font-medium ${
+                    className={`text-[10px] font-medium transition-colors ${
                       isActive ? "text-sage-dim" : "text-slate-ink/60"
                     }`}
                   >
                     {item.label}
                   </span>
                   <span
-                    className={`h-0.5 w-6 rounded-full transition-colors ${
-                      isActive ? "bg-sage" : "bg-transparent"
+                    className={`h-0.5 w-6 rounded-full transition-all duration-200 ${
+                      isActive ? "scale-x-100 bg-sage" : "scale-x-0 bg-transparent"
                     }`}
                   />
                 </>

@@ -8,6 +8,7 @@ import {
   Card,
   ErrorBanner,
   ProgressBar,
+  Reveal,
   SectionLabel,
   Skeleton,
   SkeletonCard,
@@ -48,12 +49,12 @@ function MilestoneCard({
             milestone.completed ? "Mark milestone incomplete" : "Mark milestone complete"
           }
           title={milestone.completed ? "Mark milestone incomplete" : "Mark milestone complete"}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 font-mono text-sm transition-all duration-200 ${
+          className={`focus-ring flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 font-mono text-sm transition-all duration-200 ${
             state === "done"
-              ? "border-moss bg-moss text-navy"
+              ? "animate-pop border-moss bg-moss text-navy"
               : state === "current"
                 ? "border-sage bg-sage/15 text-sage-dim shadow-focus"
-                : "border-hairline bg-card text-slate-ink hover:border-sage"
+                : "border-hairline bg-card text-slate-ink hover:scale-110 hover:border-sage active:scale-90"
           }`}
         >
           {milestone.completed ? <Check size={15} strokeWidth={3} /> : milestone.order}
@@ -133,7 +134,7 @@ function MilestoneCard({
                         key={task.id}
                         onClick={() => onToggleItem(task.id, !task.completed)}
                         aria-label={task.completed ? "Mark task incomplete" : "Mark task complete"}
-                        className={`flex w-full items-start gap-3 rounded-btn border px-3 py-2.5 text-left transition-all duration-150 ${
+                        className={`group flex w-full items-start gap-3 rounded-btn border px-3 py-2.5 text-left transition-all duration-150 ${
                           task.completed
                             ? "border-separator bg-canvas"
                             : "border-separator bg-canvas hover:-translate-y-px hover:border-sage hover:shadow-focus"
@@ -142,8 +143,8 @@ function MilestoneCard({
                         <span
                           className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-btn border transition-all duration-200 ${
                             task.completed
-                              ? "border-moss bg-moss text-navy"
-                              : "border-hairline bg-card text-transparent"
+                              ? "animate-pop border-moss bg-moss text-navy"
+                              : "border-hairline bg-card text-transparent group-hover:scale-110"
                           }`}
                         >
                           <Check size={11} strokeWidth={3} />
@@ -314,68 +315,73 @@ export default function GoalPage() {
       {genError && <ErrorBanner message={genError} />}
 
       {/* Progress summary */}
-      <Card className="mb-8 p-5">
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-          <div className="min-w-[220px] flex-1">
-            <div className="mb-2 flex items-center justify-between text-sm text-slate-ink">
-              <span>
-                {doneTasks} of {totalTasks.length} tasks ·{" "}
-                {goal.milestones.filter((m) => m.completed).length}/{goal.milestones.length}{" "}
-                milestones
-              </span>
-              <span className="font-mono text-xs">{Math.round(pct)}%</span>
+      <Reveal>
+        <Card className="mb-8 p-5">
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+            <div className="min-w-[220px] flex-1">
+              <div className="mb-2 flex items-center justify-between text-sm text-slate-ink">
+                <span>
+                  {doneTasks} of {totalTasks.length} tasks ·{" "}
+                  {goal.milestones.filter((m) => m.completed).length}/{goal.milestones.length}{" "}
+                  milestones
+                </span>
+                <span className="font-mono text-xs">{Math.round(pct)}%</span>
+              </div>
+              <ProgressBar value={pct} animate />
             </div>
-            <ProgressBar value={pct} animate />
-          </div>
-          <div className="flex items-center gap-6">
-            <div>
-              <p className="label-mono text-[10px] text-slate-ink/60">status</p>
-              <div className="mt-1">
-                <StatusBadge status={goal.status} />
+            <div className="flex items-center gap-6">
+              <div>
+                <p className="label-mono text-[10px] text-slate-ink/60">status</p>
+                <div className="mt-1">
+                  <StatusBadge status={goal.status} />
+                </div>
+              </div>
+              <div>
+                <p className="label-mono text-[10px] text-slate-ink/60">target</p>
+                <p className="mt-1 font-mono text-sm text-navy">{formatDate(goal.target_date)}</p>
               </div>
             </div>
-            <div>
-              <p className="label-mono text-[10px] text-slate-ink/60">target</p>
-              <p className="mt-1 font-mono text-sm text-navy">{formatDate(goal.target_date)}</p>
-            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Reveal>
 
       {/* Roadmap */}
       {generating ? (
-        <Card className="border-eucalyptus/30 bg-eucalyptus/5 p-8">
-          <div className="flex items-center gap-3 text-eucalyptus">
-            <span className="relative flex h-3 w-3">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-eucalyptus/60" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-eucalyptus" />
-            </span>
-            <SectionLabel className="text-eucalyptus">steerium intelligence</SectionLabel>
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-navy-deep">
-            Qwen is drafting your roadmap — milestones, tasks, and the reasoning behind each step.
-            This takes a few seconds…
-          </p>
-          <div className="mt-5 space-y-3">
-            <Skeleton className="h-14 w-full" />
-            <Skeleton className="h-14 w-5/6" />
-            <Skeleton className="h-14 w-4/6" />
-          </div>
-        </Card>
+        <Reveal>
+          <Card className="border-eucalyptus/30 bg-eucalyptus/5 p-8">
+            <div className="flex items-center gap-3 text-eucalyptus">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-eucalyptus/60" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-eucalyptus" />
+              </span>
+              <SectionLabel className="text-eucalyptus">steerium intelligence</SectionLabel>
+            </div>
+            <p className="mt-3 text-sm leading-relaxed text-navy-deep">
+              Qwen is drafting your roadmap — milestones, tasks, and the reasoning behind each step.
+              This takes a few seconds…
+            </p>
+            <div className="mt-5 space-y-3">
+              <Skeleton className="h-14 w-full" />
+              <Skeleton className="h-14 w-5/6" />
+              <Skeleton className="h-14 w-4/6" />
+            </div>
+          </Card>
+        </Reveal>
       ) : hasRoadmap ? (
         <div>
           <SectionLabel className="mb-4">your roadmap</SectionLabel>
           <div>
             {goal.milestones.map((m, i) => (
-              <MilestoneCard
-                key={m.id}
-                milestone={m}
-                state={milestoneState(m, m.id === currentMilestoneId)}
-                open={openIds.has(m.id)}
-                onToggleOpen={() => toggleOpen(m.id)}
-                onToggleItem={toggleItem}
-                isLast={i === goal.milestones.length - 1}
-              />
+              <Reveal key={m.id} delay={Math.min(i * 80, 480)}>
+                <MilestoneCard
+                  milestone={m}
+                  state={milestoneState(m, m.id === currentMilestoneId)}
+                  open={openIds.has(m.id)}
+                  onToggleOpen={() => toggleOpen(m.id)}
+                  onToggleItem={toggleItem}
+                  isLast={i === goal.milestones.length - 1}
+                />
+              </Reveal>
             ))}
           </div>
         </div>

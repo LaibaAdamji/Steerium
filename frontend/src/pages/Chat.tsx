@@ -85,11 +85,12 @@ export default function ChatPage() {
                 </p>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
-                {SUGGESTIONS.map((s) => (
+                {SUGGESTIONS.map((s, i) => (
                   <button
                     key={s}
                     onClick={() => ask(s)}
-                    className="rounded-full border border-hairline bg-canvas px-3.5 py-1.5 text-xs text-slate-ink transition-all duration-150 hover:-translate-y-px hover:border-sage hover:text-navy"
+                    style={{ animationDelay: `${160 + i * 70}ms` }}
+                    className="animate-fade-up rounded-full border border-hairline bg-canvas px-3.5 py-1.5 text-xs text-slate-ink transition-all duration-200 ease-out hover:-translate-y-0.5 hover:border-sage hover:text-navy hover:shadow-focus active:translate-y-0"
                   >
                     {s}
                   </button>
@@ -100,13 +101,13 @@ export default function ChatPage() {
 
           {messages.map((msg, i) =>
             msg.role === "user" ? (
-              <div key={i} className="flex justify-end">
-                <p className="max-w-[85%] rounded-ai rounded-br-btn bg-navy px-4 py-2.5 text-sm text-white">
+              <div key={i} className="animate-fade-up flex justify-end">
+                <p className="max-w-[85%] rounded-ai rounded-br-btn bg-navy px-4 py-2.5 text-sm text-white shadow-focus">
                   {msg.content}
                 </p>
               </div>
             ) : (
-              <div key={i} className="flex justify-start">
+              <div key={i} className="animate-fade-up flex justify-start">
                 <div className="w-full max-w-[92%] rounded-ai rounded-bl-btn border border-eucalyptus/25 bg-eucalyptus/5 px-4 py-3.5">
                   <div className="mb-2 flex items-center gap-2">
                     <Sparkles size={11} className="text-eucalyptus" />
@@ -153,7 +154,7 @@ export default function ChatPage() {
           )}
 
           {busy && (
-            <div className="flex items-center gap-2 px-1 text-eucalyptus">
+            <div className="animate-fade flex items-center gap-2 px-1 text-eucalyptus">
               <span className="flex gap-1">
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-eucalyptus [animation-delay:0ms]" />
                 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-eucalyptus [animation-delay:150ms]" />
