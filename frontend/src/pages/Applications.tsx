@@ -153,7 +153,7 @@ export default function ApplicationsPage() {
         />
       ) : (
         <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0">
-          {APPLICATION_STATUSES.map((status) => {
+          {APPLICATION_STATUSES.map((status, colIndex) => {
             const items = byStatus(status);
             const isHighlighted = statusParam === status;
             return (
@@ -170,11 +170,12 @@ export default function ApplicationsPage() {
                   setDragId(null);
                   setDragOver(null);
                 }}
-                className={`flex w-[260px] shrink-0 snap-start flex-col rounded-card border p-3 transition-colors md:w-auto md:min-w-[200px] md:flex-1 ${
+                style={{ animationDelay: `${colIndex * 70}ms` }}
+                className={`animate-fade-up flex w-[260px] shrink-0 snap-start flex-col rounded-card border p-3 transition-all duration-200 md:w-auto md:min-w-[200px] md:flex-1 ${
                   isHighlighted
-                    ? "border-sage/60 bg-sage/5"
+                    ? "border-sage/60 bg-sage/5 shadow-focus"
                     : dragOver === status
-                      ? "border-sage bg-sage/10"
+                      ? "scale-[1.01] border-sage bg-sage/10 shadow-focus"
                       : "border-hairline bg-canvas"
                 }`}
                 aria-label={`${COLUMN_LABELS[status]} column`}
@@ -191,8 +192,10 @@ export default function ApplicationsPage() {
                       <Card
                         key={app.id}
                         interactive
-                        className={`cursor-grab p-3 active:cursor-grabbing ${
-                          dragId === app.id ? "opacity-40" : ""
+                        className={`cursor-grab p-3 transition-all duration-200 active:cursor-grabbing ${
+                          dragId === app.id
+                            ? "rotate-1 scale-95 opacity-40"
+                            : "hover:rotate-0"
                         }`}
                       >
                         <div
