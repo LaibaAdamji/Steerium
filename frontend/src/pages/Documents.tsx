@@ -12,6 +12,7 @@ import {
   Field,
   Modal,
   PageHeader,
+  Reveal,
   SkeletonCard,
   formatDate,
 } from "../components/ui";
@@ -162,7 +163,7 @@ export default function DocumentsPage() {
       {error && <ErrorBanner message={error} />}
 
       {/* Upload zone */}
-      <div className="mb-6">
+      <Reveal className="mb-6">
         <div className="mb-3 flex flex-wrap items-center gap-3">
           <p className="label-mono text-[10px] text-slate-ink">document type</p>
           <div className="flex gap-2">
@@ -171,10 +172,10 @@ export default function DocumentsPage() {
                 key={t}
                 type="button"
                 onClick={() => setDocType(t)}
-                className={`rounded-btn border px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-wide transition-colors ${
+                className={`rounded-btn border px-3 py-1.5 font-mono text-[11px] font-medium uppercase tracking-wide transition-all duration-150 active:scale-95 ${
                   docType === t
                     ? "border-sage bg-sage/15 text-sage-dim"
-                    : "border-hairline bg-card text-slate-ink hover:border-sage"
+                    : "border-hairline bg-card text-slate-ink hover:-translate-y-px hover:border-sage"
                 }`}
               >
                 {t}
@@ -204,23 +205,30 @@ export default function DocumentsPage() {
             setDragActive(false);
             handleFile(e.dataTransfer.files?.[0]);
           }}
-          className={`flex cursor-pointer flex-col items-center justify-center rounded-card border-2 border-dashed px-6 py-10 text-center transition-all duration-200 ${
+          className={`group flex cursor-pointer flex-col items-center justify-center rounded-card border-2 border-dashed px-6 py-10 text-center transition-all duration-200 ease-out ${
             uploading
               ? "cursor-wait border-hairline bg-card"
               : dragActive
-                ? "-translate-y-0.5 border-sage bg-sage/5 shadow-focus"
-                : "border-hairline bg-card hover:border-sage hover:shadow-focus"
+                ? "-translate-y-0.5 scale-[1.01] border-sage bg-sage/5 shadow-lift"
+                : "border-hairline bg-card hover:-translate-y-0.5 hover:border-sage hover:shadow-focus"
           }`}
         >
           <span
-            className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full transition-colors ${
-              uploading ? "bg-sage/20 text-sage-dim" : "bg-sage/10 text-sage-dim"
+            className={`mb-3 flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
+              uploading
+                ? "bg-sage/20 text-sage-dim"
+                : dragActive
+                  ? "scale-110 bg-sage/20 text-sage-dim"
+                  : "bg-sage/10 text-sage-dim group-hover:scale-105"
             }`}
           >
             {uploading ? (
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-sage/30 border-t-sage-dim" />
             ) : (
-              <UploadCloud size={22} />
+              <UploadCloud
+                size={22}
+                className="transition-transform duration-300 group-hover:-translate-y-0.5"
+              />
             )}
           </span>
 
@@ -253,7 +261,7 @@ export default function DocumentsPage() {
           className="hidden"
           onChange={(e) => handleFile(e.target.files?.[0])}
         />
-      </div>
+      </Reveal>
 
       {/* List */}
       {!documents ? (
@@ -268,31 +276,36 @@ export default function DocumentsPage() {
           hint="Upload your resume so the assistant can ground answers in your actual experience."
         />
       ) : (
-        <Card>
-          <ul className="divide-y divide-separator">
-            {documents.map((doc) => (
-              <li
-                key={doc.id}
-                className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-canvas"
-                onClick={() => openDetail(doc)}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-btn bg-canvas font-mono text-[10px] uppercase text-slate-ink">
-                  {doc.filename.split(".").pop()}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-navy">{doc.filename}</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <Chip>{doc.document_type}</Chip>
-                    <span className="font-mono text-[10px] text-slate-ink/60">
-                      {formatDate(doc.uploaded_at)}
-                    </span>
+        <Reveal delay={80}>
+          <Card>
+            <ul className="divide-y divide-separator">
+              {documents.map((doc, i) => (
+                <li
+                  key={doc.id}
+                  style={{ animationDelay: `${120 + i * 60}ms` }}
+                  className="animate-fade-up group flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors duration-150 hover:bg-canvas"
+                  onClick={() => openDetail(doc)}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-btn bg-canvas font-mono text-[10px] uppercase text-slate-ink transition-colors duration-150 group-hover:text-sage-dim">
+                    {doc.filename.split(".").pop()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-navy">{doc.filename}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <Chip>{doc.document_type}</Chip>
+                      <span className="font-mono text-[10px] text-slate-ink/60">
+                        {formatDate(doc.uploaded_at)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <span className="label-mono shrink-0 text-[9px] text-sage-dim">view pipeline →</span>
-              </li>
-            ))}
-          </ul>
-        </Card>
+                  <span className="label-mono shrink-0 text-[9px] text-sage-dim transition-transform duration-200 group-hover:translate-x-0.5">
+                    view pipeline →
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </Reveal>
       )}
 
       {/* Detail modal */}

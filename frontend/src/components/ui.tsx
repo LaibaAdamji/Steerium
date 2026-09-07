@@ -11,6 +11,28 @@ import {
 } from "react";
 import { Check, X } from "lucide-react";
 
+// --- Motion ---
+
+/** Entrance wrapper: fades content up, optionally staggered by delay. */
+export function Reveal({
+  delay = 0,
+  className = "",
+  children,
+}: {
+  delay?: number;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={`animate-fade-up ${className}`}
+      style={delay ? { animationDelay: `${delay}ms` } : undefined}
+    >
+      {children}
+    </div>
+  );
+}
+
 // --- Surfaces ---
 
 export function Card({
@@ -24,8 +46,10 @@ export function Card({
 }) {
   return (
     <div
-      className={`rounded-card border border-hairline bg-card transition-all duration-200 ${
-        interactive ? "cursor-pointer hover:-translate-y-0.5 hover:border-sage hover:shadow-focus" : ""
+      className={`rounded-card border border-hairline bg-card transition-all duration-200 ease-out ${
+        interactive
+          ? "cursor-pointer hover:-translate-y-1 hover:border-sage/60 hover:shadow-lift active:translate-y-0 active:shadow-focus"
+          : ""
       } ${className}`}
     >
       {children}
@@ -45,10 +69,10 @@ export function PageHeader({
   eyebrow?: string;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div className="animate-fade-up mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         {eyebrow && <p className="label-mono mb-1.5 text-[10px] text-sage-dim">{eyebrow}</p>}
-        <h1 className="text-2xl font-semibold tracking-tight text-navy">{title}</h1>
+        <h1 className="font-display text-2xl font-semibold tracking-tight text-navy">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-slate-ink">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -64,7 +88,7 @@ export function SectionLabel({ children, className = "" }: { children: ReactNode
 
 export function Spinner({ label = "Loading" }: { label?: string }) {
   return (
-    <div className="flex items-center gap-3 py-12 text-slate-ink">
+    <div className="animate-fade flex items-center gap-3 py-12 text-slate-ink">
       <span className="h-4 w-4 animate-spin rounded-full border-2 border-hairline border-t-sage" />
       <span className="label-mono">{label}…</span>
     </div>
@@ -91,9 +115,9 @@ export function EmptyState({
   icon?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-card border border-dashed border-hairline bg-card px-6 py-14 text-center">
+    <div className="animate-fade-up flex flex-col items-center justify-center rounded-card border border-dashed border-hairline bg-card px-6 py-14 text-center">
       {icon && (
-        <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-sage/10 text-sage-dim">
+        <span className="animate-pop mb-4 flex h-11 w-11 items-center justify-center rounded-full bg-sage/10 text-sage-dim">
           {icon}
         </span>
       )}
@@ -131,24 +155,25 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
 }
 
-/** Sage-primary button (navy text) per design spec; secondary = white/slate. */
+/** Sage-primary button (navy text) per design spec; secondary = white/slate.
+ *  Hover grows a soft sage glow; press settles with a tiny scale. */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   { children, variant = "primary", loading = false, disabled, className = "", ...rest },
   ref,
 ) {
   const variants: Record<ButtonVariant, string> = {
     primary:
-      "bg-sage text-navy hover:bg-moss active:translate-y-px disabled:hover:bg-sage",
+      "bg-sage text-navy shadow-focus hover:bg-moss hover:shadow-[0_8px_20px_-8px_rgba(111,156,96,0.65)] active:scale-[0.97] active:shadow-none disabled:hover:bg-sage disabled:hover:shadow-focus",
     secondary:
-      "border border-slate-ink/40 bg-card text-slate-ink hover:border-slate-ink hover:bg-canvas active:translate-y-px",
-    ghost: "text-slate-ink hover:bg-hairline/50",
-    danger: "border border-error/30 bg-card text-error hover:bg-error/5",
+      "border border-slate-ink/40 bg-card text-slate-ink hover:border-slate-ink hover:bg-canvas hover:shadow-[0_4px_12px_-6px_rgba(1,25,54,0.25)] active:scale-[0.97]",
+    ghost: "text-slate-ink hover:bg-hairline/60 active:scale-[0.97]",
+    danger: "border border-error/30 bg-card text-error hover:bg-error/5 active:scale-[0.97]",
   };
   return (
     <button
       ref={ref}
       disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-btn px-4 py-2 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
+      className={`focus-ring inline-flex items-center justify-center gap-2 rounded-btn px-4 py-2 text-sm font-semibold transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 ${variants[variant]} ${className}`}
       {...rest}
     >
       {loading && (
@@ -266,7 +291,7 @@ export function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/** Moss fill on light track, per design spec. Fills in on mount. */
+/** Moss fill on light track, per design spec. Fills in on mount, then sheens. */
 export function ProgressBar({ value, animate = false }: { value: number; animate?: boolean }) {
   const pct = Math.min(100, Math.max(0, value));
   const [width, setWidth] = useState(animate ? 0 : pct);
@@ -289,9 +314,70 @@ export function ProgressBar({ value, animate = false }: { value: number; animate
       aria-valuemax={100}
     >
       <div
-        className="h-full rounded-full bg-moss transition-[width] duration-700 ease-out"
+        className="progress-sheen h-full rounded-full bg-gradient-to-r from-sage-dim to-moss transition-[width] duration-700 ease-out"
         style={{ width: `${width}%` }}
       />
+    </div>
+  );
+}
+
+/** Animated progress ring for hero surfaces (dark backgrounds). */
+export function ProgressRing({
+  value,
+  size = 132,
+  stroke = 9,
+  label,
+  sublabel,
+}: {
+  value: number;
+  size?: number;
+  stroke?: number;
+  label?: string;
+  sublabel?: string;
+}) {
+  const pct = Math.min(100, Math.max(0, value));
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const t = setTimeout(() => setProgress(pct), 250);
+    return () => clearTimeout(t);
+  }, [pct]);
+
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          strokeWidth={stroke}
+          fill="none"
+          className="stroke-white/10"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          fill="none"
+          className="stroke-sage transition-[stroke-dashoffset] duration-1000 ease-out"
+          strokeDasharray={c}
+          strokeDashoffset={c - (progress / 100) * c}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="font-display text-3xl font-semibold leading-none text-white">
+          {Math.round(pct)}%
+        </span>
+        {label && <span className="label-mono mt-1.5 text-[9px] text-sage">{label}</span>}
+        {sublabel && (
+          <span className="mt-0.5 max-w-[96px] truncate text-[10px] text-white/50">{sublabel}</span>
+        )}
+      </div>
     </div>
   );
 }
@@ -306,7 +392,7 @@ export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
   const sizes = { sm: "h-7 w-7 text-[10px]", md: "h-9 w-9 text-xs", lg: "h-12 w-12 text-sm" };
   return (
     <span
-      className={`flex shrink-0 items-center justify-center rounded-full bg-navy font-mono font-semibold tracking-wide text-sage ${sizes[size]}`}
+      className={`flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-navy to-navy-deep font-mono font-semibold tracking-wide text-sage ring-1 ring-sage/40 ${sizes[size]}`}
       aria-hidden
     >
       {initials || "?"}
@@ -314,7 +400,7 @@ export function Avatar({ name, size = "md" }: { name: string; size?: "sm" | "md"
   );
 }
 
-/** Animated completion checkbox. */
+/** Animated completion checkbox — pops when it flips to done. */
 export function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
   return (
     <button
@@ -323,10 +409,10 @@ export function Checkbox({ checked, onChange, label }: { checked: boolean; onCha
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-btn border transition-all duration-200 ${
+      className={`focus-ring flex h-5 w-5 shrink-0 items-center justify-center rounded-btn border transition-all duration-200 ${
         checked
-          ? "border-moss bg-moss text-navy"
-          : "border-hairline bg-card text-transparent hover:scale-105 hover:border-sage"
+          ? "animate-pop border-moss bg-moss text-navy"
+          : "border-hairline bg-card text-transparent hover:scale-110 hover:border-sage active:scale-90"
       }`}
     >
       <Check size={12} strokeWidth={3} />
@@ -361,19 +447,23 @@ export function Modal({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-navy/40 animate-[fade-in_150ms_ease-out]" onClick={onClose} aria-hidden />
+      <div
+        className="animate-fade absolute inset-0 bg-navy/45 backdrop-blur-[2px]"
+        onClick={onClose}
+        aria-hidden
+      />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="relative w-full max-w-md rounded-card border border-hairline bg-card p-6 shadow-focus animate-[modal-in_180ms_ease-out]"
+        className="animate-modal relative w-full max-w-md rounded-card border border-hairline bg-card p-6 shadow-pop"
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-navy">{title}</h2>
+          <h2 className="font-display text-base font-semibold text-navy">{title}</h2>
           <button
             onClick={onClose}
             aria-label="Close dialog"
-            className="rounded-btn p-1 text-slate-ink transition-colors hover:bg-hairline/60 hover:text-navy"
+            className="focus-ring rounded-btn p-1 text-slate-ink transition-all duration-150 hover:rotate-90 hover:bg-hairline/60 hover:text-navy"
           >
             <X size={16} />
           </button>
