@@ -48,12 +48,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className={`pointer-events-auto flex items-start gap-2.5 rounded-card border bg-card px-4 py-3 shadow-focus animate-[modal-in_180ms_ease-out] ${
+            className={`animate-toast pointer-events-auto flex items-start gap-2.5 rounded-card border bg-card px-4 py-3 shadow-lift transition-colors duration-150 hover:bg-canvas ${
               t.kind === "success" ? "border-sage/50" : "border-error/30"
             }`}
           >
             {t.kind === "success" ? (
-              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-sage-dim" />
+              <CheckCircle2 size={16} className="animate-pop mt-0.5 shrink-0 text-sage-dim" />
             ) : (
               <AlertCircle size={16} className="mt-0.5 shrink-0 text-error" />
             )}
@@ -61,7 +61,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <button
               onClick={() => dismiss(t.id)}
               aria-label="Dismiss notification"
-              className="shrink-0 text-slate-ink/60 transition-colors hover:text-navy"
+              className="shrink-0 rounded-btn text-slate-ink/60 transition-all duration-150 hover:rotate-90 hover:text-navy"
             >
               <X size={14} />
             </button>
